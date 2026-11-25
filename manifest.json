@@ -1,0 +1,46 @@
+{
+  "manifestVersion": 2,
+  "id": "theme-background",
+  "version": "1.0.0",
+  "author": "TimYuhong",
+  "name": {
+    "en": "Theme Background",
+    "zh-CN": "主题背景"
+  },
+  "description": {
+    "en": "Customize accent palettes, five frosted surfaces, local fonts, and image/video/shader wallpapers across Codex Desktop and CH Web.",
+    "zh-CN": "在 Codex Desktop 与 CH Web 中自由定制主题强调色、五大界面磨砂透明度、本地字体与图片/视频/动态壁纸。"
+  },
+  "details": {
+    "en": "### Highlights\n\n- **Unified Accent Palette**: Pick any color via HSV color wheel, HEX/RGB/HSL, wallpaper extraction, or keyboard-accessible eyedropper. Harmonizes buttons, sidebar navigation, tabs, borders, surfaces, selection, and embedded Host settings while keeping WCAG AA contrast and a luminous top-left CodexHost brand mark.\n- **Five Independent Frosted Surfaces**: Fine-tune opacity (0–100%), frost blur (0–40 px), and text outline separately for Main Canvas, Sidebar (with subtle expanded parent-child thread cards), Cards & Menus, Composer, and Settings Panel.\n- **Local UI Fonts**: Load a single WOFF2/WOFF/TTF/OTF font up to 50 MiB for UI text while preserving monospace code blocks, terminals, and icons.\n- **Rich Backdrops**: Public HTTPS images, local JPEG/PNG/WebP/GIF/AVIF (up to 20 MiB), silent looping MP4/WebM videos (up to 200 MiB), 30-image rotation pools, Mesh gradients, 4 WebGL shaders (Aurora, Nebula, Flow, Starfield), and 6 Canvas patterns.\n- **Profiles & Day/Night Schedule**: Six WCAG-calibrated built-in looks, up to 20 full snapshots (colors, surfaces, background, framing, and font), time or OS-scheme schedules, and JSON import/export.\n\n### Cross-Device Sync & Privacy\n\n- Pure frontend Manifest v2 extension with **zero background processes** and no telemetry.\n- Appearance settings, schedules, and media UUID references sync via CodexHost Host storage; local binary files stay in IndexedDB per browser profile/partition and can be relinked cleanly across Desktop, Chrome, and WebView2.",
+    "zh-CN": "### 核心特性\n\n- **全局主题强调色**：支持 HSV 色轮、HEX/RGB/HSL、壁纸一键提色与键盘可用吸管取色。主题色统一谐和按钮、左侧功能栏、标签页、边框、表面底色、文本选区及内嵌设置弹窗深浅配色，同时守住 WCAG AA 对比度并保持左上角 CodexHost 品牌标志清晰醒亮。\n- **五大界面区域独立调节**：分别控制主界面、侧栏（含展开父子对话轻分组卡片）、卡片与菜单、输入区和设置面板的不透明度（0–100%）、磨砂模糊（0–40 px）与文字描边。\n- **本端界面字体**：支持单字体 WOFF2 / WOFF / TTF / OTF（上限 50 MiB）替换界面文字，代码块、终端与图标字体保持原样。\n- **多源静态与动态背景**：支持公开 HTTPS 图片、本地 JPEG/PNG/WebP/GIF/AVIF（上限 20 MiB）、静音循环 MP4/WebM 视频（上限 200 MiB）、30 图轮换池、网格渐变、4 种着色器（极光/星云/流体/星海）与 6 种几何图案。\n- **外观档案与昼夜定时**：内置 6 套对比度校准预设，支持保存最多 20 套完整档案（含背景、构图与字体）、按本地时间或系统明暗自动切换，以及 JSON 文件/文本导入导出。\n\n### 跨端同步与隐私\n\n- 纯前端 Manifest v2 架构，**零后台常驻进程**、零外部遥测。\n- 外观参数、定时计划与媒体 UUID 引用通过 Host 跨端共享；本地图片/视频/字体保存在各端浏览器 IndexedDB 中，可在 Desktop、Chrome 与 WebView2 间复用 UUID 无损重关联。"
+  },
+  "repository": "https://github.com/TimYuhong/codexhost-theme-background",
+  "icon": "icon.png",
+  "screenshots": [
+    "preview-dark.webp",
+    "preview-settings.webp",
+    "preview-light.webp"
+  ],
+  "categories": ["appearance", "interface"],
+  "slots": ["appearance.theme"],
+  "page": {
+    "apiVersion": 1,
+    "entry": "page.mjs",
+    "style": "page.css",
+    "title": {
+      "en": "Theme Background",
+      "zh-CN": "主题背景"
+    }
+  },
+  "desktop": {
+    "apiVersion": 1,
+    "script": "desktop.js",
+    "style": "desktop.css"
+  },
+  "web": {
+    "apiVersion": 1,
+    "entry": "web.mjs",
+    "style": "web.css"
+  }
+}

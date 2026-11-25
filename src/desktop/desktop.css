@@ -1,0 +1,304 @@
+:root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]),
+:root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]) :is([data-theme], [data-app-shell-frame], [data-app-shell-main-surface]) {
+  --app-color-background-surface: var(--tb-canvas);
+  --app-color-background-surface-under: var(--tb-sidebar);
+  --app-color-background-shell: var(--tb-sidebar);
+  --app-color-background-elevated-primary: var(--tb-surface);
+  --app-color-background-elevated-primary-opaque: var(--tb-surface);
+  --app-color-background-elevated-secondary: var(--tb-surface);
+  --app-color-background-elevated-secondary-opaque: var(--tb-surface);
+  --app-color-background-application-menu: var(--tb-surface);
+  --app-color-background-editor-opaque: var(--tb-surface);
+  --app-color-text-foreground: var(--tb-text);
+  --app-color-text-foreground-secondary: var(--tb-muted);
+  --app-color-text-foreground-tertiary: var(--tb-muted);
+  --app-color-text-secondary: var(--tb-muted);
+  --app-color-icon-primary: var(--tb-text);
+  --app-color-icon-secondary: var(--tb-muted);
+  --app-color-icon-tertiary: var(--tb-muted);
+  --app-color-border: var(--tb-border);
+  --app-color-border-light: var(--tb-border);
+  --app-color-border-heavy: var(--tb-border);
+  --color-surface: var(--tb-canvas);
+  --color-surface-canvas: var(--tb-canvas);
+  --color-surface-card: var(--tb-surface);
+  --color-surface-secondary: var(--tb-sidebar);
+  --color-surface-tertiary: var(--tb-surface);
+  --color-surface-elevated: var(--tb-surface);
+  --color-surface-elevated-secondary: var(--tb-surface);
+  --color-background-default: var(--tb-canvas);
+  --color-background-surface: var(--tb-surface);
+  --tb-primary-fill: var(--tb-accent, var(--tb-text));
+  --tb-primary-text: var(--tb-on-accent, var(--tb-canvas));
+  --color-background-primary-solid: var(--tb-primary-fill);
+  --color-background-primary-solid-hover: color-mix(in srgb, var(--tb-primary-fill) 87%, var(--tb-text));
+  --color-background-primary-solid-active: color-mix(in srgb, var(--tb-primary-fill) 76%, var(--tb-text));
+  --color-text-primary-solid: var(--tb-primary-text);
+  --color-background-composer-primary: var(--tb-primary-fill);
+  --color-text-composer-primary: var(--tb-primary-text);
+  --color-background-user-message: var(--tb-surface);
+  --color-background-user-message-compact: var(--tb-surface);
+  --color-background-primary-ghost-hover: var(--tb-hover);
+  --color-background-secondary-ghost-hover: var(--tb-hover);
+  --color-token-bg-primary: var(--tb-canvas);
+  --color-token-bg-secondary: var(--tb-surface);
+  --color-token-bg-tertiary: var(--tb-surface);
+  --color-token-main-surface-primary: var(--tb-canvas);
+  --color-token-side-bar-background: var(--tb-sidebar);
+  --color-token-side-bar-section-header-background: var(--tb-sidebar);
+  --color-token-side-bar-title-background: var(--tb-sidebar);
+  --color-token-panel-background: var(--tb-surface);
+  --color-token-dropdown-background: var(--tb-surface);
+  --color-token-menu-background: var(--tb-surface);
+  --color-token-input-background: var(--tb-surface);
+  --color-token-editor-background: var(--tb-surface);
+  --color-token-title-bar-active-background: var(--tb-sidebar);
+  --color-token-title-bar-inactive-background: var(--tb-sidebar);
+  --color-text: var(--tb-text);
+  --color-text-emphasis: var(--tb-text);
+  --color-text-primary: var(--tb-text);
+  --color-text-secondary: var(--tb-muted);
+  --color-text-tertiary: var(--tb-muted);
+  --color-token-foreground: var(--tb-text);
+  --color-token-text-primary: var(--tb-text);
+  --color-token-text-secondary: var(--tb-muted);
+  --color-token-text-tertiary: var(--tb-muted);
+  --color-token-description-foreground: var(--tb-muted);
+  --color-token-icon-foreground: var(--tb-text);
+  --color-token-input-foreground: var(--tb-text);
+  --color-token-menu-foreground: var(--tb-text);
+  --color-token-dropdown-foreground: var(--tb-text);
+  --color-border: var(--tb-border);
+  --color-border-default: var(--tb-border);
+  --color-border-subtle: var(--tb-border);
+  --color-border-strong: var(--tb-border);
+  --color-token-border: var(--tb-border);
+  --color-token-border-default: var(--tb-border);
+  --color-token-list-hover-background: var(--tb-hover);
+  --color-token-list-active-selection-background: var(--tb-hover);
+  --color-token-menu-selection-background: var(--tb-hover);
+  --menu-background-color: var(--tb-surface);
+  --input-soft-background-color: var(--tb-surface);
+}
+:root[data-cx-theme-background-palette][data-cx-theme-background-dark] {
+  --tb-canvas: color-mix(in srgb, var(--tb-accent) 8%, #131519);
+  --tb-sidebar: color-mix(in srgb, var(--tb-accent) 11%, #16191e);
+  --tb-surface: color-mix(in srgb, var(--tb-accent) 12%, #171a20);
+  --tb-hover: color-mix(in srgb, var(--tb-accent) 18%, #20242c);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 42%, #3a404b);
+}
+:root[data-cx-theme-background-palette][data-cx-theme-background-light] {
+  --tb-canvas: color-mix(in srgb, var(--tb-accent) 5%, #ffffff);
+  --tb-sidebar: color-mix(in srgb, var(--tb-accent) 8%, #f5f7fa);
+  --tb-surface: color-mix(in srgb, var(--tb-accent) 7%, #f8f9fb);
+  --tb-hover: color-mix(in srgb, var(--tb-accent) 13%, #eef1f6);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 40%, #bfc6d0);
+}
+:root[data-cx-theme-background-palette],
+:root[data-cx-theme-background-palette] [data-theme],
+:root[data-cx-theme-background-palette] :is([data-app-shell-frame], [data-app-shell-main-surface]) {
+  --app-color-text-accent: var(--tb-accent);
+  --app-color-icon-accent: var(--tb-accent);
+  --app-color-accent-blue: var(--tb-accent);
+  --app-color-border-focus: var(--tb-accent);
+  --app-color-text-on-accent: var(--tb-on-accent);
+  --app-color-background-accent: color-mix(in srgb, var(--tb-accent) 16%, transparent);
+  --app-color-background-accent-hover: color-mix(in srgb, var(--tb-accent) 24%, transparent);
+  --app-color-background-accent-active: color-mix(in srgb, var(--tb-accent) 30%, transparent);
+  --codex-theme-accent-color: var(--tb-accent);
+  --codex-theme-accent-text: var(--tb-accent);
+  --codex-theme-accent-icon: var(--tb-accent);
+  --codex-theme-accent-background-subtle: color-mix(in srgb, var(--tb-accent) 16%, transparent);
+  --codex-theme-accent-background-hover: color-mix(in srgb, var(--tb-accent) 24%, transparent);
+  --codex-theme-accent-background-pressed: color-mix(in srgb, var(--tb-accent) 30%, transparent);
+  --color-text-info: var(--tb-accent);
+  --accent-icon: var(--tb-accent);
+  --color-ring: var(--tb-accent);
+  --focus-outline-color: var(--tb-accent);
+  --color-background-accent-action: var(--tb-accent);
+  --color-background-info-solid: var(--tb-accent);
+  --color-background-info-solid-hover: color-mix(in srgb, var(--tb-accent) 88%, var(--tb-text));
+  --color-token-button-background: var(--tb-accent);
+  --color-token-button-foreground: var(--tb-on-accent);
+  --color-token-button-hover-background: color-mix(in srgb, var(--tb-accent) 88%, var(--tb-text));
+  --color-token-text-link-foreground: var(--tb-accent);
+  --color-token-focus-border: var(--tb-accent);
+  --color-token-on-accent: var(--tb-on-accent);
+  --switch-track-color-checked: var(--tb-accent);
+  --color-token-list-active-selection-background: color-mix(in srgb, var(--tb-accent) 22%, var(--tb-surface));
+  --color-token-list-hover-background: color-mix(in srgb, var(--tb-accent) 12%, var(--tb-hover));
+  accent-color: var(--tb-accent);
+}
+:root[data-cx-theme-background-palette] ::selection {
+  background: color-mix(in srgb, var(--tb-accent) 34%, transparent);
+}
+:root[data-cx-theme-background-palette] :is(input, textarea, [contenteditable="true"]) {
+  caret-color: var(--tb-accent);
+}
+:root[data-cx-theme-background-palette] [data-composer-surface-variant]:focus-within {
+  box-shadow: inset 0 0 0 1px var(--tb-accent);
+}
+:root[data-cx-theme-background-palette] [role="tablist"] [role="tab"][aria-selected="true"] {
+  background-color: color-mix(in srgb, var(--tb-accent) 20%, var(--tb-surface));
+  border-color: color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
+}
+:root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]) [data-cx-sidebar-thread-tree-root-expanded] {
+  margin-block: 4px;
+  padding-block: 3px;
+  border-radius: calc(var(--cxh-row-radius, 10px) + 2px);
+  background: color-mix(in srgb, var(--tb-surface) 38%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tb-border) 48%, transparent);
+}
+:root[data-cx-theme-background-palette] [data-cx-sidebar-thread-tree-root-expanded] {
+  background: color-mix(in srgb, var(--tb-accent) 4%, color-mix(in srgb, var(--tb-surface) 40%, transparent));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tb-accent) 24%, color-mix(in srgb, var(--tb-border) 38%, transparent));
+}
+:root[data-cx-theme-background-palette] nav[data-app-navigation-rail] :is([aria-current="page"], [aria-selected="true"], [data-active="true"]) {
+  background-color: color-mix(in srgb, var(--tb-accent) 22%, var(--tb-surface));
+  box-shadow: inset 3px 0 0 var(--tb-accent), inset 0 0 0 1px color-mix(in srgb, var(--tb-accent) 34%, transparent);
+  color: var(--tb-text);
+}
+:root[data-cx-theme-background-palette] nav[data-app-navigation-rail] :is(button, a, [role="treeitem"]):not([aria-current="page"], [aria-selected="true"], [data-active="true"], :has([data-codexhost-mark])):hover {
+  background-color: color-mix(in srgb, var(--tb-accent) 13%, var(--tb-hover));
+}
+:root[data-cx-theme-background-palette] nav[data-app-navigation-rail] :is(button, a):not(:has([data-codexhost-mark])) svg:not([data-codexhost-mark]) {
+  color: var(--tb-accent);
+}
+:root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]) [data-codexhost-mark="otter-colored"] {
+  background: rgb(255 255 255 / 92%);
+  border-radius: 999px;
+  padding: 2px;
+  box-sizing: border-box;
+  box-shadow: 0 0 8px rgb(255 255 255 / 45%), 0 1px 3px rgb(0 0 0 / 45%);
+}
+:root[data-cx-theme-background-dark] [data-codexhost-mark="ch-navigation"] {
+  color: #ffffff !important;
+  filter: drop-shadow(0 0 5px rgb(255 255 255 / 45%)) drop-shadow(0 1px 2px rgb(0 0 0 / 80%));
+}
+:root[data-cx-theme-background-light] [data-codexhost-mark="ch-navigation"] {
+  color: #0f172a !important;
+  filter: drop-shadow(0 0 4px rgb(255 255 255 / 95%)) drop-shadow(0 1px 2px rgb(15 23 42 / 24%));
+}
+:root[data-cx-theme-background-scheme-override] :is(body, [data-theme], [data-codexhost-settings-shell]) {
+  color-scheme: var(--tb-scheme) !important;
+  --theme-variant: var(--tb-scheme);
+}
+:root[data-cx-theme-background-backdrop],
+:root[data-cx-theme-background-backdrop] body,
+:root[data-cx-theme-background-backdrop] #root { background-color: transparent; }
+:root[data-cx-theme-background-backdrop] body { isolation: isolate; }
+:root:is([data-cx-theme-background-backdrop], [data-cx-theme-background-tone]) :is([data-app-shell-frame], [data-app-shell-main-surface], nav[data-app-navigation-rail]) { color: var(--tb-text); }
+:root[data-cx-theme-background-s-bg] {
+  --tb-main-plate: color-mix(in srgb, var(--tb-canvas) var(--tb-p-bg), transparent);
+}
+:root[data-cx-theme-background-s-bg],
+:root[data-cx-theme-background-s-bg] [data-theme] {
+  --app-color-background-surface: var(--tb-main-plate);
+  --app-color-background-surface-under: transparent;
+  --app-color-background-shell: transparent;
+  --color-surface: var(--tb-main-plate);
+  --color-surface-canvas: var(--tb-main-plate);
+  --color-background-default: var(--tb-main-plate);
+  --color-token-bg-primary: var(--tb-main-plate);
+  --color-token-main-surface-primary: var(--tb-main-plate);
+}
+:root[data-cx-theme-background-s-bg] :is([data-app-shell-frame], [data-app-shell-main-surface]):has([data-app-shell-surface-backing]),
+:root[data-cx-theme-background-s-bg] [data-app-shell-frame]:has([data-app-shell-main-surface]) { background-color: transparent; }
+:root[data-cx-theme-background-s-bg] [data-app-shell-frame]:not(:has([data-app-shell-main-surface], [data-app-shell-surface-backing])),
+:root[data-cx-theme-background-s-bg] [data-app-shell-main-surface]:not(:has([data-app-shell-surface-backing])),
+:root[data-cx-theme-background-s-bg] [data-app-shell-surface-backing] {
+  background-color: var(--tb-main-plate);
+}
+:root[data-cx-theme-background-s-bg] [data-app-shell-surface-backing] { backdrop-filter: var(--tb-b-bg, none); }
+:root[data-cx-theme-background-s-bg] :is([data-app-shell-frame], [data-app-shell-main-surface]):not(:has([data-app-shell-main-surface], [data-app-shell-surface-backing])) {
+  position: relative;
+  isolation: isolate;
+}
+:root[data-cx-theme-background-s-bg] :is([data-app-shell-frame], [data-app-shell-main-surface]):not(:has([data-app-shell-main-surface], [data-app-shell-surface-backing]))::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  backdrop-filter: var(--tb-b-bg, none);
+}
+:root[data-cx-theme-background-backdrop][data-cx-theme-background-s-settings]:has(nav[data-codexhost-settings-open]) [data-app-shell-surface-backing] {
+  background-color: transparent;
+  backdrop-filter: none;
+}
+:root[data-cx-theme-background-tone] nav[data-app-navigation-rail] { background-color: var(--tb-sidebar); }
+:root[data-cx-theme-background-s-sidebar],
+:root[data-cx-theme-background-s-sidebar] [data-theme] {
+  --color-token-side-bar-background: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+  --color-token-side-bar-section-header-background: transparent;
+  --color-token-side-bar-title-background: transparent;
+  --color-token-title-bar-active-background: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+  --color-token-title-bar-inactive-background: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+  --color-surface-secondary: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+}
+:root[data-cx-theme-background-s-sidebar] nav[data-app-navigation-rail] {
+  background-color: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+  backdrop-filter: var(--tb-b-sidebar, none);
+}
+:root[data-cx-theme-background-s-card],
+:root[data-cx-theme-background-s-card] [data-theme] {
+  --app-color-background-elevated-primary: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --app-color-background-elevated-secondary: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --app-color-background-application-menu: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-surface-card: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-surface-elevated: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-surface-elevated-secondary: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-background-surface: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-background-user-message: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-background-user-message-compact: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-token-dropdown-background: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --color-token-menu-background: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --menu-background-color: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  --menu-backdrop-filter: var(--tb-b-card);
+}
+:root[data-cx-theme-background-s-card] :is([role="menu"], [role="listbox"], [data-radix-popper-content-wrapper] [role="dialog"]) {
+  background-color: color-mix(in srgb, var(--tb-surface) var(--tb-p-card), transparent);
+  backdrop-filter: var(--tb-b-card, none);
+}
+:root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]) [data-composer-surface-variant] {
+  --composer-layout-surface-background: var(--tb-surface) !important;
+}
+:root[data-cx-theme-background-s-input] [data-composer-surface-variant] {
+  --composer-layout-surface-background: color-mix(in srgb, var(--tb-surface) var(--tb-p-input), transparent) !important;
+  --composer-layout-surface-backdrop-filter: var(--tb-b-input, none) !important;
+}
+:root[data-cx-theme-background-stroke] :is([data-app-shell-frame], [data-app-shell-main-surface]) { -webkit-text-stroke: var(--tb-w-bg, 0px) var(--tb-c-bg, currentColor); }
+:root[data-cx-theme-background-stroke] nav[data-app-navigation-rail] { -webkit-text-stroke: var(--tb-w-sidebar, 0px) var(--tb-c-sidebar, currentColor); }
+:root[data-cx-theme-background-stroke] :is([role="menu"], [role="listbox"], [data-radix-popper-content-wrapper] [role="dialog"]) { -webkit-text-stroke: var(--tb-w-card, 0px) var(--tb-c-card, currentColor); }
+:root[data-cx-theme-background-stroke] [data-composer-surface-variant] { -webkit-text-stroke: var(--tb-w-input, 0px) var(--tb-c-input, currentColor); }
+:root[data-cx-theme-background-stroke] { paint-order: stroke fill; }
+:root[data-cx-theme-background-stroke] :is(svg, svg *) { -webkit-text-stroke: 0; }
+:root[data-cx-theme-background-s-settings] [data-codexhost-settings-shell] {
+  --tb-settings-plate: color-mix(in srgb, var(--tb-canvas) var(--tb-p-settings), transparent);
+  --tb-settings-clear: transparent;
+}
+:root[data-cx-theme-background-s-sidebar] [data-codexhost-settings-shell] {
+  --tb-settings-sidebar-plate: color-mix(in srgb, var(--tb-sidebar) var(--tb-p-sidebar), transparent);
+}
+:root[data-cx-theme-background-s-input] [data-codexhost-settings-shell] {
+  --tb-settings-input-plate: color-mix(in srgb, var(--tb-surface) var(--tb-p-input), transparent);
+}
+:root[data-cx-theme-background-font],
+:root[data-cx-theme-background-font] :is(body, [data-theme], [data-app-shell-frame], [data-codexhost-settings-shell], [role="menu"], [role="listbox"]) {
+  font-family: ThemeBackgroundLocal, system-ui, sans-serif;
+  font-synthesis-weight: auto;
+  --codex-content-font-family: ThemeBackgroundLocal, system-ui, sans-serif;
+  --font-ui-family: ThemeBackgroundLocal, system-ui, sans-serif;
+  --font-sans: ThemeBackgroundLocal, system-ui, sans-serif;
+  --font-sans-default: ThemeBackgroundLocal, system-ui, sans-serif;
+}
+.tb-desktop-layer {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+  visibility: hidden;
+}
+:root[data-cx-theme-background-backdrop] .tb-desktop-layer { visibility: visible; }

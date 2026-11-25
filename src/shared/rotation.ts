@@ -1,14 +1,6 @@
-/**
- * Rotation-cadence math shared by BOTH halves.
- *
- * The client used to carry a hand-mirrored copy of this logic, and a drift
- * between the two (the server advancing on one week boundary, the client's
- * fallback on another) would make them fight over `current`/`lastRotate`.
- * One implementation, inlined into both bundles by tsdown — change daily/weekly
- * semantics here only.
- */
+import type { Rotation } from './config.ts'
 
-/** Everything the cadence math needs; both halves' RotationConfig satisfy it. */
+/** Inputs to cadence and index selection. */
 export interface RotationCadence {
   enabled: boolean
   mode: 'shuffle' | 'order'
@@ -44,11 +36,7 @@ export function rotationDue(rot: RotationCadence, now: Date = new Date()): boole
  *  on-the-hour tick). */
 const hourKey = (d: Date): number => Math.floor(d.getTime() / 3_600_000)
 
-/** Whether an OPEN page should keep advancing this cadence on its timer.
- *  Only the time-based cadences tick live; 'reload' is a once-per-READ pick
- *  (the server advances it inside the `read` itself), so a live tick driving
- *  it would flip the wallpaper every 30 s — exactly the v0.4.0 regression
- *  (rotationDue is unconditionally true for 'reload'). */
+/** Reload is due at startup only; a periodic caller must check this before rotationDue. */
 export function rotationAdvancesLive(rot: Pick<RotationCadence, 'interval'>): boolean {
   return rot.interval !== 'reload'
 }
@@ -58,9 +46,23 @@ export function pickNextRotationIndex(rot: RotationCadence): number {
   const n = rot.items.length
   if (n === 0) return -1
   if (rot.mode === 'shuffle' && n > 1) {
-    let idx = rot.current
-    while (idx === rot.current) idx = Math.floor(Math.random() * n)
-    return idx
+    const excluding = rot.current >= 0 && rot.current < n
+    const index = Math.floor(Math.random() * (excluding ? n - 1 : n))
+    return excluding && index >= rot.current ? index + 1 : index
   }
   return (rot.current + 1) % n
+}
+
+export type RotationState = { poolId: string; current: string | null; lastRotate: string | null }
+export type RotationAction = 'read' | 'startup' | 'tick' | 'next' | { select: string }
+
+export function rotationStep(pool: Rotation, saved: RotationState | undefined, action: RotationAction, now = new Date()) {
+  const index = saved?.current ? pool.items.indexOf(saved.current) : -1
+  const cadence: RotationCadence = { ...pool, enabled: true, current: index, lastRotate: saved?.lastRotate ?? null }
+  const selected = typeof action === 'object' ? pool.items.indexOf(action.select) : -1
+  const due = action === 'startup' || (action === 'tick' && rotationAdvancesLive(pool))
+  const changed = !!pool.items.length && (selected >= 0 || action === 'next' || (due && rotationDue(cadence, now)))
+  const current = changed ? pool.items[selected >= 0 ? selected : pickNextRotationIndex(cadence)] : pool.items[Math.max(0, index)] ?? null
+  const state: RotationState = { poolId: pool.poolId, current, lastRotate: changed ? now.toISOString() : cadence.lastRotate }
+  return { state, changed }
 }
