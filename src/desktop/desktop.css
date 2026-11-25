@@ -16,8 +16,8 @@
   --app-color-icon-primary: var(--tb-text);
   --app-color-icon-secondary: var(--tb-muted);
   --app-color-icon-tertiary: var(--tb-muted);
-  --app-color-border: var(--tb-border);
-  --app-color-border-light: var(--tb-border);
+  --app-color-border: color-mix(in srgb, var(--tb-border) 78%, transparent);
+  --app-color-border-light: color-mix(in srgb, var(--tb-border) 50%, transparent);
   --app-color-border-heavy: var(--tb-border);
   --color-surface: var(--tb-canvas);
   --color-surface-canvas: var(--tb-canvas);
@@ -68,12 +68,12 @@
   --color-token-input-foreground: var(--tb-text);
   --color-token-menu-foreground: var(--tb-text);
   --color-token-dropdown-foreground: var(--tb-text);
-  --color-border: var(--tb-border);
-  --color-border-default: var(--tb-border);
-  --color-border-subtle: var(--tb-border);
+  --color-border: color-mix(in srgb, var(--tb-border) 78%, transparent);
+  --color-border-default: color-mix(in srgb, var(--tb-border) 78%, transparent);
+  --color-border-subtle: color-mix(in srgb, var(--tb-border) 50%, transparent);
   --color-border-strong: var(--tb-border);
-  --color-token-border: var(--tb-border);
-  --color-token-border-default: var(--tb-border);
+  --color-token-border: color-mix(in srgb, var(--tb-border) 78%, transparent);
+  --color-token-border-default: color-mix(in srgb, var(--tb-border) 78%, transparent);
   --color-token-list-hover-background: var(--tb-hover);
   --color-token-list-active-selection-background: var(--tb-hover);
   --color-token-menu-selection-background: var(--tb-hover);
@@ -85,14 +85,14 @@
   --tb-sidebar: color-mix(in srgb, var(--tb-accent) 11%, #16191e);
   --tb-surface: color-mix(in srgb, var(--tb-accent) 12%, #171a20);
   --tb-hover: color-mix(in srgb, var(--tb-accent) 18%, #20242c);
-  --tb-border: color-mix(in srgb, var(--tb-accent) 42%, #3a404b);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 15%, #343942);
 }
 :root[data-cx-theme-background-palette][data-cx-theme-background-light] {
   --tb-canvas: color-mix(in srgb, var(--tb-accent) 5%, #ffffff);
   --tb-sidebar: color-mix(in srgb, var(--tb-accent) 8%, #f5f7fa);
   --tb-surface: color-mix(in srgb, var(--tb-accent) 7%, #f8f9fb);
   --tb-hover: color-mix(in srgb, var(--tb-accent) 13%, #eef1f6);
-  --tb-border: color-mix(in srgb, var(--tb-accent) 40%, #bfc6d0);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 12%, #d2d7e0);
 }
 :root[data-cx-theme-background-palette],
 :root[data-cx-theme-background-palette] [data-theme],
@@ -136,11 +136,11 @@
   caret-color: var(--tb-accent);
 }
 :root[data-cx-theme-background-palette] [data-composer-surface-variant]:focus-within {
-  box-shadow: inset 0 0 0 1px var(--tb-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
 }
 :root[data-cx-theme-background-palette] [role="tablist"] [role="tab"][aria-selected="true"] {
-  background-color: color-mix(in srgb, var(--tb-accent) 20%, var(--tb-surface));
-  border-color: color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
+  background-color: color-mix(in srgb, var(--tb-accent) 16%, var(--tb-surface));
+  border-color: color-mix(in srgb, var(--tb-accent) 32%, var(--tb-border));
 }
 :root:is([data-cx-theme-background-tone], [data-cx-theme-background-backdrop]) [data-cx-sidebar-thread-tree-root-expanded] {
   margin-block: 4px;

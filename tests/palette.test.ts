@@ -32,8 +32,15 @@ test('CSS reconstructs all 24 accent bits with distinct complete prefixes', () =
       assert.match(rule, /--dsw-specific-sidebar-nav-item-active:/)
       assert.match(rule, /--dsw-alias-scrollbar-bg-l2:/)
       assert.doesNotMatch(rule, /--dsh-codexhost-mark-accent/)
+      assert.match(base, /--dsw-alias-border-l1:\s*color-mix\(in srgb, var\(--tb-border\) 50%, transparent\)/)
+      assert.match(base, /\[data-selection-answer\]\s*:not\(pre\)\s*>\s*code\s*\{\s*border-color:\s*transparent;/)
       assert.match(base, /\[data-cx-ext-theme-background-palette\]\[data-cx-ext-theme-background-dark\]/)
       assert.match(base, /section\[data-turn-changes\]\s*>\s*div:first-child\s*>\s*button/)
+      assert.match(base, /section\[data-turn-changes\]\s*\[data-path-label\]\s*>\s*span\s*>\s*:not\(:last-child\)/)
+      assert.match(base, /\[data-lulu-changes\]\s*\.lulu-disclosure\[aria-expanded="true"\]/)
+      assert.match(base, /\.lulu-running-changes\s+strong/)
+      assert.match(base, /--dsw-alias-file-diff-added-marker:/)
+      assert.match(base, /--dsw-alias-file-diff-deleted-marker:/)
       assert.match(base, /\[data-composer-card\]:focus-within/)
       assert.match(base, /\[data-cx-region="sidebar"\][^\{]*\[aria-current="page"\]/)
       assert.match(base, /\[data-thread-branch\]:not\(\[data-thread-branch\] \[data-thread-branch\]\):has\(> \[role="group"\]:not\(\[hidden\]\)\)/)
@@ -180,6 +187,10 @@ test('accent-tinted canvas, sidebar, surface and hover keep WCAG AA even for ext
       }
       for (const ink of [colors.text, colors.muted]) {
         assert.ok(contrast(ink, toned.hover) >= 4.5, `${scheme} ${hex} hover`)
+      }
+      const diffMarkers = scheme === 'light' ? ['#15653b', '#a42834'] : ['#8de6a8', '#ff9ea5']
+      for (const marker of diffMarkers) {
+        assert.ok(contrast(marker, toned.surface) >= 4.5, `${scheme} ${hex} diff marker ${marker}`)
       }
     }
   }

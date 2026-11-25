@@ -36,7 +36,7 @@
 
 ### From GitHub Release ZIP
 
-1. Download `theme-background-1.0.0.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
+1. Download `theme-background-1.0.1.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
 2. In CodexHost, choose **Import Plugin → Local .zip** and select the downloaded archive.
 3. Enable **Theme Background** — your appearance stays active even after closing the settings page.
 

@@ -45,19 +45,19 @@ html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-
   --dsw-alias-button-ghost-active-fill: var(--tb-hover) !important;
   --dsw-alias-button-ghost-active-border: var(--tb-border) !important;
   --dsw-alias-button-ghost-active-hover: var(--tb-hover) !important;
-  --dsw-alias-border-l1: var(--tb-border) !important;
-  --dsw-alias-border-l2: var(--tb-border) !important;
+  --dsw-alias-border-l1: color-mix(in srgb, var(--tb-border) 50%, transparent) !important;
+  --dsw-alias-border-l2: color-mix(in srgb, var(--tb-border) 78%, transparent) !important;
   --dsw-alias-border-l3: var(--tb-border) !important;
   --dsw-alias-border-l4: var(--tb-border) !important;
-  --dsw-alias-border-main: var(--tb-border) !important;
+  --dsw-alias-border-main: color-mix(in srgb, var(--tb-border) 68%, transparent) !important;
   --dsw-alias-interactive-bg-hover: var(--tb-hover) !important;
   --dsw-alias-interactive-bg-hover-solid: var(--tb-hover) !important;
   --dsw-alias-interactive-bg-active: var(--tb-hover) !important;
   --dsw-alias-link: var(--tb-text) !important;
   --dsw-alias-markdown-code-block: var(--tb-surface) !important;
   --dsw-alias-markdown-code-block-banner: var(--tb-hover) !important;
-  --dsw-alias-markdown-inline-code: var(--tb-hover) !important;
-  --dsw-alias-markdown-tag: var(--tb-hover) !important;
+  --dsw-alias-markdown-inline-code: color-mix(in srgb, var(--tb-hover) 68%, var(--tb-canvas)) !important;
+  --dsw-alias-markdown-tag: color-mix(in srgb, var(--tb-hover) 72%, var(--tb-canvas)) !important;
   --dsw-alias-scrollbar-bg-l1: var(--tb-border) !important;
   --dsw-alias-scrollbar-bg-l2: var(--tb-border) !important;
   --dsw-alias-scrollbar-hover-l1: var(--tb-muted) !important;
@@ -65,6 +65,9 @@ html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-
   color-scheme: var(--tb-scheme) !important;
   background-color: var(--tb-canvas);
   color: var(--tb-text);
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) [data-selection-answer] :not(pre) > code {
+  border-color: transparent;
 }
 html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) [data-cx-region="sidebar"] {
   --ch-sidebar-text-primary: var(--tb-text) !important;
@@ -91,14 +94,14 @@ html body[data-cx-ext-theme-background-palette][data-cx-ext-theme-background-dar
   --tb-sidebar: color-mix(in srgb, var(--tb-accent) 11%, #16191e);
   --tb-surface: color-mix(in srgb, var(--tb-accent) 12%, #171a20);
   --tb-hover: color-mix(in srgb, var(--tb-accent) 18%, #20242c);
-  --tb-border: color-mix(in srgb, var(--tb-accent) 42%, #3a404b);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 15%, #343942);
 }
 html body[data-cx-ext-theme-background-palette][data-cx-ext-theme-background-light] {
   --tb-canvas: color-mix(in srgb, var(--tb-accent) 5%, #ffffff);
   --tb-sidebar: color-mix(in srgb, var(--tb-accent) 8%, #f5f7fa);
   --tb-surface: color-mix(in srgb, var(--tb-accent) 7%, #f8f9fb);
   --tb-hover: color-mix(in srgb, var(--tb-accent) 13%, #eef1f6);
-  --tb-border: color-mix(in srgb, var(--tb-accent) 40%, #bfc6d0);
+  --tb-border: color-mix(in srgb, var(--tb-accent) 12%, #d2d7e0);
 }
 html body[data-cx-ext-theme-background-palette] {
   --dsw-alias-state-business-primary: var(--tb-accent) !important;
@@ -175,33 +178,103 @@ html body[data-cx-ext-theme-background-palette] [data-cx-region="sidebar"] butto
 html body[data-cx-ext-theme-background-palette] [data-cx-region="topbar"] button:not(:disabled) svg {
   color: color-mix(in srgb, var(--tb-accent) 82%, var(--tb-text));
 }
-html body[data-cx-ext-theme-background-palette] section[data-turn-changes] {
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) :is(section[data-turn-changes], [data-lulu-changes], .lulu-running-changes, [data-chat-flow] [data-diff]) {
+  --dsw-alias-file-diff-added-marker: light-dark(#15653b, #8de6a8);
+  --dsw-alias-file-diff-deleted-marker: light-dark(#a42834, #ff9ea5);
+  --dsw-alias-state-success-primary: var(--dsw-alias-file-diff-added-marker);
+  --dsw-alias-state-error-primary: var(--dsw-alias-file-diff-deleted-marker);
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) section[data-turn-changes] [data-path-label] {
+  justify-content: flex-start;
+  mask-image: none;
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) section[data-turn-changes] [data-path-label] > span {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+  gap: 8px;
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) section[data-turn-changes] [data-path-label] > span > :not(:last-child) {
+  order: 1;
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  max-inline-size: min(44%, 32ch);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  unicode-bidi: isolate;
+  color: var(--tb-muted);
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) section[data-turn-changes] [data-path-label] > span > :last-child {
+  flex: 0 0 auto;
+  min-inline-size: 0;
+  max-inline-size: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) [data-lulu-changes] {
+  background: transparent;
+  color: var(--tb-text);
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) .lulu-running-changes {
+  background: var(--tb-surface);
   border-color: var(--tb-border);
+  color: var(--tb-text);
+}
+html body:is([data-cx-ext-theme-background-tone], [data-cx-ext-theme-background-backdrop]) .lulu-patch {
+  background: var(--dsw-alias-markdown-code-block);
+  border: 1px solid var(--tb-border);
+  border-radius: var(--dsw-radius-md, 8px);
+}
+html body[data-cx-ext-theme-background-palette] section[data-turn-changes] {
+  border-color: var(--dsw-alias-border-l2);
 }
 html body[data-cx-ext-theme-background-palette] section[data-turn-changes] > div:first-child > span:first-child svg {
   color: var(--tb-accent);
 }
 html body[data-cx-ext-theme-background-palette] section[data-turn-changes] > div:first-child > button {
   color: var(--tb-accent);
-  border-color: color-mix(in srgb, var(--tb-accent) 55%, var(--tb-border));
-  background: color-mix(in srgb, var(--tb-accent) 14%, var(--tb-surface));
+  border-color: color-mix(in srgb, var(--tb-accent) 34%, var(--tb-border));
+  background: color-mix(in srgb, var(--tb-accent) 10%, var(--tb-surface));
 }
 html body[data-cx-ext-theme-background-palette] section[data-turn-changes] > div:first-child > button:hover {
-  background: color-mix(in srgb, var(--tb-accent) 24%, var(--tb-surface));
+  background: color-mix(in srgb, var(--tb-accent) 18%, var(--tb-surface));
 }
 html body[data-cx-ext-theme-background-palette] section[data-turn-changes] > button {
   color: var(--tb-accent);
 }
+html body[data-cx-ext-theme-background-palette] .lulu-running-changes {
+  border-color: color-mix(in srgb, var(--tb-accent) 28%, var(--tb-border));
+}
+html body[data-cx-ext-theme-background-palette] .lulu-running-changes:not(:disabled):hover {
+  background: color-mix(in srgb, var(--tb-accent) 10%, var(--tb-hover));
+  border-color: color-mix(in srgb, var(--tb-accent) 46%, var(--tb-border));
+}
+html body[data-cx-ext-theme-background-palette] .lulu-running-changes strong {
+  color: var(--tb-accent);
+}
+html body[data-cx-ext-theme-background-palette] [data-lulu-changes] .lulu-disclosure[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--tb-accent) 16%, var(--tb-surface));
+  box-shadow: inset 3px 0 0 var(--tb-accent);
+}
+html body[data-cx-ext-theme-background-palette] [data-lulu-changes] .lulu-button:not(:disabled):hover {
+  background: color-mix(in srgb, var(--tb-accent) 12%, var(--tb-hover));
+  border-color: color-mix(in srgb, var(--tb-accent) 34%, var(--tb-border));
+}
+html body[data-cx-ext-theme-background-palette] [data-lulu-changes] :is(.lulu-filter, .lulu-versions select):focus-visible {
+  border-color: color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
+}
 html body[data-cx-ext-theme-background-palette] [data-composer-card]:focus-within {
-  --dsw-elevation-stroke-color: var(--tb-accent);
+  --dsw-elevation-stroke-color: color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
 }
 html body[data-cx-ext-theme-background-palette] [data-composer-toolbar] button:not(:disabled, [class$="_primary"], [class*="_primary "]):is(:hover, [aria-expanded="true"], [aria-pressed="true"]) {
   color: var(--tb-accent);
   background: color-mix(in srgb, var(--tb-accent) 14%, var(--tb-hover));
 }
 html body[data-cx-ext-theme-background-palette] :is([role="tablist"] [role="tab"][aria-selected="true"], button[data-active]):not([data-tb-page] *) {
-  background: color-mix(in srgb, var(--tb-accent) 20%, var(--tb-surface));
-  border-color: color-mix(in srgb, var(--tb-accent) 52%, var(--tb-border));
+  background: color-mix(in srgb, var(--tb-accent) 16%, var(--tb-surface));
+  border-color: color-mix(in srgb, var(--tb-accent) 32%, var(--tb-border));
   color: var(--tb-text);
 }
 html body[data-cx-ext-theme-background-palette] button[role="switch"][aria-checked="true"]:not([data-tb-page] *) {
@@ -345,7 +418,7 @@ html body[data-cx-ext-theme-background-s-card] {
   --dsw-specific-selector: var(--tb-card-plate) !important;
   --dsw-alias-markdown-code-block: var(--tb-card-plate) !important;
   --dsw-alias-markdown-code-block-banner: color-mix(in srgb, var(--tb-hover) max(95%, var(--tb-p-card)), var(--tb-surface)) !important;
-  --dsw-alias-markdown-inline-code: color-mix(in srgb, var(--tb-hover) var(--tb-p-card), transparent) !important;
+  --dsw-alias-markdown-inline-code: color-mix(in srgb, color-mix(in srgb, var(--tb-hover) 68%, var(--tb-canvas)) var(--tb-p-card), transparent) !important;
   --dsw-alias-markdown-tag: var(--dsw-alias-markdown-inline-code) !important;
   --dsw-menu-backdrop-filter: var(--tb-b-card, none) !important;
 }
@@ -377,8 +450,13 @@ html body[data-cx-ext-theme-background-s-card] [data-plan-card] {
   --plan-card-fill: var(--tb-card-plate);
   --plan-card-hover: var(--tb-hover);
 }
-html body[data-cx-ext-theme-background-s-card] section[data-turn-changes]:not(:has([data-diff])) {
+html body[data-cx-ext-theme-background-s-card] section[data-turn-changes]:not(:has([data-diff])),
+html body[data-cx-ext-theme-background-s-card] .lulu-running-changes {
   background: var(--tb-card-plate);
+  backdrop-filter: var(--tb-b-card, none);
+}
+html body[data-cx-ext-theme-background-s-card] [data-sidebar-right-panel][data-sidebar-right-open]:has([data-lulu-changes]) {
+  background: var(--tb-card-overlay);
   backdrop-filter: var(--tb-b-card, none);
 }
 html body[data-cx-ext-theme-background-s-card] :is([data-diff], .md-code-block) {
@@ -463,14 +541,14 @@ html body[data-lulu-theme][data-cx-ext-theme-background-backdrop] [data-cx-regio
 
 body[data-cx-ext-theme-background-stroke] :is([data-cx-region="conversation"], [data-cx-region="topbar"]) { --tb-stroke: var(--tb-w-bg, 0px) var(--tb-c-bg, currentColor); }
 body[data-cx-ext-theme-background-stroke] [data-cx-region="sidebar"] { --tb-stroke: var(--tb-w-sidebar, 0px) var(--tb-c-sidebar, currentColor); }
-body[data-cx-ext-theme-background-stroke] :is(section[data-turn-changes], [data-diff], .md-code-block, [data-plan-card], [role="menu"], [role="listbox"], [data-dockkit-content]) { --tb-stroke: var(--tb-w-card, 0px) var(--tb-c-card, currentColor); }
+body[data-cx-ext-theme-background-stroke] :is(section[data-turn-changes], [data-lulu-changes], .lulu-running-changes, [data-diff], .md-code-block, [data-plan-card], [role="menu"], [role="listbox"], [data-dockkit-content]) { --tb-stroke: var(--tb-w-card, 0px) var(--tb-c-card, currentColor); }
 body[data-cx-ext-theme-background-stroke] [data-composer-card] { --tb-stroke: var(--tb-w-input, 0px) var(--tb-c-input, currentColor); }
 body[data-cx-ext-theme-background-stroke] :is([data-shortcut-modal="settings"], [data-host-extension-page="theme-background"]) { --tb-stroke: var(--tb-w-settings, 0px) var(--tb-c-settings, currentColor); }
 body[data-cx-ext-theme-background-stroke] {
   -webkit-text-stroke: var(--tb-stroke);
   paint-order: stroke fill;
 }
-body[data-cx-ext-theme-background-stroke] :is([data-cx-region], section[data-turn-changes], [data-diff], .md-code-block, [data-plan-card], [role="menu"], [role="listbox"], [data-dockkit-content], [data-composer-card], [data-shortcut-modal="settings"], [data-host-extension-page="theme-background"]) { -webkit-text-stroke: var(--tb-stroke); }
+body[data-cx-ext-theme-background-stroke] :is([data-cx-region], section[data-turn-changes], [data-lulu-changes], .lulu-running-changes, [data-diff], .md-code-block, [data-plan-card], [role="menu"], [role="listbox"], [data-dockkit-content], [data-composer-card], [data-shortcut-modal="settings"], [data-host-extension-page="theme-background"]) { -webkit-text-stroke: var(--tb-stroke); }
 body[data-cx-ext-theme-background-stroke] :is(svg, svg *) { -webkit-text-stroke: 0; }
 
 html body[data-cx-ext-theme-background-font] {

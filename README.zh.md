@@ -36,7 +36,7 @@
 
 ### 从 GitHub Release 导入 ZIP
 
-1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.0.0.zip`。
+1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.0.1.zip`。
 2. 在插件中心选择「导入插件 → 本地 .zip」并导入压缩包。
 3. 启用扩展即可使用。
 

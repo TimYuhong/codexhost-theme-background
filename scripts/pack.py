@@ -2,6 +2,7 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import re
 from tempfile import NamedTemporaryFile
 from zipfile import ZIP_DEFLATED, ZipFile, ZipInfo
 
@@ -31,8 +32,12 @@ def main():
     require(all(path.is_file() and not path.is_symlink() for path in source.values()), 'dist entries must be regular files')
     manifest = json.loads(source['manifest.json'].read_text(encoding='utf-8'))
     package = json.loads(Path('package.json').read_text(encoding='utf-8'))
-    require((manifest['id'], manifest['version']) == (package['name'], package['version']) == ('theme-background', '1.0.0'),
-            'Manifest and package must both identify theme-background 1.0.0')
+    require(
+        manifest['id'] == package['name'] == 'theme-background'
+        and manifest['version'] == package['version']
+        and bool(re.fullmatch(r'\d+\.\d+\.\d+', manifest['version'])),
+        'Manifest and package must both identify theme-background with matching semver',
+    )
     for name, path in source.items():
         limit = (
             256 * 1024 if name.endswith('.css') else

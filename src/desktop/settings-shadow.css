@@ -8,8 +8,8 @@
   --settings-text: var(--tb-text);
   --settings-muted: var(--tb-muted);
   --settings-subtle: var(--tb-muted);
-  --settings-border: var(--tb-border);
-  --settings-divider: var(--tb-border);
+  --settings-border: color-mix(in srgb, var(--tb-border) 78%, transparent);
+  --settings-divider: color-mix(in srgb, var(--tb-border) 50%, transparent);
   --settings-hover: var(--tb-hover);
   --settings-active: var(--tb-hover);
   --settings-surface-hover: var(--tb-hover);
