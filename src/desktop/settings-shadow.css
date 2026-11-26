@@ -85,6 +85,6 @@
 :host-context([data-cx-theme-background-stroke]) :is(input, textarea, select) { -webkit-text-stroke: var(--tb-w-input, 0px) var(--tb-c-input, currentColor); }
 :host-context([data-cx-theme-background-stroke]) :is(svg, svg *) { -webkit-text-stroke: 0; }
 :host-context([data-cx-theme-background-font]) {
-  font-family: ThemeBackgroundLocal, system-ui, sans-serif;
+  font-family: var(--tb-font-stack, ThemeBackgroundLocal, system-ui, sans-serif);
   font-synthesis-weight: auto;
 }

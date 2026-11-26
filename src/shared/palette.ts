@@ -1,6 +1,15 @@
 import type { Scheme } from '../host-api.ts'
-import { clamp, SURFACES } from './config.ts'
-import type { Appearance, Surface } from './config.ts'
+import { clamp, FONT_PRESETS, SURFACES } from './config.ts'
+import type { Appearance, FontPreset, Surface } from './config.ts'
+
+export const FONT_STACKS: Record<Exclude<FontPreset, 'system'>, string> = {
+  modern: '"Segoe UI Variable Text", "Segoe UI Variable", "PingFang SC", "Noto Sans SC", "Microsoft YaHei UI", system-ui, sans-serif',
+  clean: '"DengXian", "PingFang SC", "Hiragino Sans GB", "Segoe UI Variable", "Microsoft YaHei UI", system-ui, sans-serif',
+  editorial: '"Noto Serif SC", "Source Han Serif SC", "Songti SC", "STSong", "SimSun", Georgia, serif',
+  literary: '"KaiTi", "STKaiti", "Kaiti SC", "Noto Serif SC", Georgia, serif',
+  calligraphy: '"FangSong", "STFangsong", "Songti SC", "Noto Serif SC", Georgia, serif',
+  tech: '"Bahnschrift", "DIN Alternate", "Segoe UI Variable", "Microsoft YaHei UI", "PingFang SC", system-ui, sans-serif',
+}
 
 const bases = {
   light: { canvas: '#ffffff', surface: '#f5f6f8', sidebar: '#eef0f3', text: '#191b20', muted: '#424a58', border: '#c7cbd2', hover: '#e7e9ee' },
@@ -115,7 +124,7 @@ export function colorMarks(palette: SemanticPalette) {
   return [...digits.map((tag, index) => tag + palette.accent[index + 1]),
     palette.onAccent === '#ffffff' ? 'ink-light' : 'ink-dark', 'palette']
 }
-export function appearanceMarks(config: Appearance | undefined, hostScheme: Scheme, backdrop: boolean, solid: boolean, font = false, backdropDark?: boolean | null) {
+export function appearanceMarks(config: Appearance | undefined, hostScheme: Scheme, backdrop: boolean, solid: boolean, font = false, backdropDark?: boolean | null, fontPreset?: FontPreset) {
   if (!config) return []
   const names: string[] = []
   const scheme = config.schemeOverride !== 'auto' ? config.schemeOverride :
@@ -124,6 +133,7 @@ export function appearanceMarks(config: Appearance | undefined, hostScheme: Sche
   if (config.accent !== null) names.push(...colorMarks(paletteFor(config.accent, scheme)), 'tone')
   if (backdrop) names.push('backdrop')
   if (font) names.push('font')
+  else if (fontPreset && fontPreset !== 'system') names.push('font', `font-${fontPreset}`)
   for (const part of SURFACES) {
     const opacity = config.opacities[part], blur = config.blurs[part], stroke = config.strokes[part]
     if (backdrop) {
@@ -168,5 +178,8 @@ export function markerCss(target: 'desktop' | 'web'): string {
   }
   rules.push(`${selector('ink-light')}{--tb-on-accent:#ffffff}`, `${selector('ink-dark')}{--tb-on-accent:#000000}`)
   rules.push(`${selector('palette')}{--tb-accent:${rgb('')}}`)
+  for (const preset of FONT_PRESETS) {
+    if (preset !== 'system') rules.push(`${selector(`font-${preset}`)}{--tb-font-stack:${FONT_STACKS[preset]}}`)
+  }
   return rules.join('\n') + '\n'
 }

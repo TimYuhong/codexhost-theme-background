@@ -572,13 +572,14 @@ export function shaderGenerator(canvas: HTMLCanvasElement, source: Extract<Sourc
     return {
       dispose,
       draw(width: number, height: number, pad: number, frame: number) {
+        if (gl.isContextLost()) return false
         const scaleX = canvas.width / (width + 2 * pad), scaleY = canvas.height / (height + 2 * pad)
         gl.viewport(0, 0, canvas.width, canvas.height)
         gl.uniform2f(resolution, width * scaleX, height * scaleY)
         gl.uniform2f(padding, pad * scaleX, pad * scaleY)
         gl.uniform1f(time, frame * 0.32 * source.speed)
         gl.drawArrays(gl.TRIANGLES, 0, 3)
-        return gl.getError() === gl.NO_ERROR && !gl.isContextLost()
+        return !gl.isContextLost()
       },
     }
   } catch {

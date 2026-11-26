@@ -1,7 +1,7 @@
 <div align="center">
   <img src="assets/icon.png" width="88" height="88" alt="Theme Background icon" />
   <h1>Theme Background for CodexHost</h1>
-  <p>Unified accent palettes, frosted surfaces, local UI fonts, and rich static/dynamic wallpapers for <strong>Codex Desktop</strong> &amp; <strong>CH Web</strong>.</p>
+  <p>A pure-frontend visual customization extension for <strong>Codex Desktop</strong> &amp; <strong>CH Web</strong> — curated offline themes, an independent custom theme studio, unified accent palettes, translucent surfaces, UI typography, and an interactive otter composer pet.</p>
   <p><strong>English</strong> · <a href="README.zh.md">简体中文</a></p>
 </div>
 
@@ -9,51 +9,69 @@
 
 ## Preview
 
-| Dark Aurora & Emerald Accent | Management Studio (Colors) | Light Glass & Surface Controls |
+| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.0`) | Light Glass Workspace (Glacial Glass) |
 | :---: | :---: | :---: |
-| ![Dark workspace preview](assets/preview-dark.webp) | ![Theme Background settings preview](assets/preview-settings.webp) | ![Light glass interface preview](assets/preview-light.webp) |
+| ![Dark workspace preview](assets/preview-dark.webp) | ![Theme studio preview](assets/preview-settings.webp) | ![Light glass interface preview](assets/preview-light.webp) |
 
 ---
 
-## Highlights
+## Built-in Theme Suites
 
-- **Unified Accent Palette**: Pick any color via HSV color wheel, HEX / RGB / HSL inputs, one-click wallpaper color extraction, or keyboard-accessible pixel eyedropper. Harmonizes buttons, sidebar navigation, tabs, borders, surface tints, text selection, scrollbars, and embedded Host settings while preserving WCAG AA contrast and a luminous top-left CodexHost brand mark.
-- **Five Independent Frosted Surfaces**: Independently tune opacity (`0–100%`), frost blur (`0–40 px`), and text outlines for **Main Canvas**, **Sidebar** (with subtle expanded parent-child thread cards), **Cards & Menus**, **Composer**, and **Settings Panel**.
-- **Local UI Typography**: Bind a single `WOFF2` / `WOFF` / `TTF` / `OTF` font (up to 50 MiB) to interface text while keeping monospace code blocks, terminals, and icons intact.
-- **Static & Animated Backdrops**: Supports public HTTPS images, local `JPEG` / `PNG` / `WebP` / `GIF` / `AVIF` (up to 20 MiB), silent looping `MP4` / `WebM` videos (up to 200 MiB), 30-image rotation pools, Mesh gradients, 4 WebGL shaders (Aurora, Nebula, Flow, Starfield), and 6 Canvas patterns — with independent image/video framing and native wallpaper preview priority in CH Web.
-- **Profiles & Day/Night Automation**: Six WCAG-calibrated built-in looks, up to 20 full snapshots (colors, five surfaces, backdrop source, framing, and font), local-time or OS-scheme schedules, and file/text JSON import & export.
-- **Pure Frontend Manifest v2**: Zero background processes, zero external telemetry, and full hot enable/disable cleanup.
+Four ready-to-use bundles ship offline with 1080p HD wallpapers, hue-separated WCAG AA accents, CJK/Latin typography presets, low-opacity canvas & sidebar, and crisp zero-blur cards and composer. **Default · Moonlit Sakurabridge** activates automatically on first install, and you can restore the native Host look anytime with one click:
+
+| Default · Moonlit Sakurabridge (Animated) | Rainy Forest | Nordic Minimal | Glacial Glass |
+| :---: | :---: | :---: | :---: |
+| ![Default · Moonlit Sakurabridge](assets/presets/default.webp) | ![Rainy Forest](assets/presets/forest.webp) | ![Nordic Minimal](assets/presets/minimal.webp) | ![Glacial Glass](assets/presets/glass.webp) |
+| Dark · Animated WebP · `#00ef07` · Modern Sans | Dark · `#e5a952` · Modern Sans | Light · `#a85d26` · Editorial Serif | Light · `#9e4260` · Airy Clean |
+
+---
+
+## Features
+
+### Built-in Suites & Independent Custom Theme Studio
+- **One-Click Built-in Suites**: Instantly switch between 4 curated offline themes or restore the native Host look anytime.
+- **Create Custom Themes from Scratch**: Build, edit, duplicate, and save up to 20 independent themes — or click **Save current look** to snapshot your active configuration.
+- **Direct Media Import**: Drag-and-drop or import local `JPEG` / `PNG` / `WebP` / `GIF` / `AVIF` images (up to 20 MiB), silent looping `MP4` / `WebM` videos (up to 200 MiB, with automatic poster thumbnails on saved cards), public `HTTPS` image URLs, 30-image rotation pools, Mesh gradients, 4 WebGL shaders, or 6 Canvas patterns.
+- **Full Color Studio**: Interactive 2D HSV color wheel, native color well, HEX / RGB / HSL inputs, pixel eyedropper, one-click **Extract from wallpaper**, and **Use current color**.
+
+### Harmonized Workspace & Surfaces
+- **Five Independent Surfaces**: Tune opacity (`0–100%`), frost blur (`0–40 px`), and text outlines separately for **Main Canvas**, **Sidebar**, **Cards & Menus**, **Composer**, and **Settings Panel**.
+- **Cohesive Reading & Layout Polish**: Reasoning/thinking blocks, command cards, code blocks, and diffs share unified translucent cards; the new-chat composer rests cleanly in the lower area to showcase your wallpaper; Windows custom titlebar buttons (`— / ❐ / ×`) and the top-left CodexHost logo stay crisp across light and dark themes.
+- **Built-in Typography & Local Fonts**: Pick from 6 curated CJK/Latin UI font presets (**Modern Sans**, **Airy Clean**, **Editorial Serif**, **Literary Kai**, **Fine FangSong**, **Geometric Tech**) or load a local `WOFF2` / `WOFF` / `TTF` / `OTF` font (up to 50 MiB) while keeping code blocks, terminals, and icons untouched.
+
+### Interactive Otter Pet & Automation
+- **Pixel-Voxel Otter & Laptop Companion**: A crisp 2.5D voxel CodexHost otter sits right on the top-right edge of the chat composer beside its tiny glowing emerald-screen laptop — gently bobbing, blinking, flicking its ear, wagging its tail, tapping along on the keyboard as you type, and hopping with a sparkle when clicked (GPU-composited CSS animations that automatically pause on hidden tabs and respect `prefers-reduced-motion`).
+- **Day/Night Scheduling & JSON Transfer**: Automatically switch between saved custom themes by local time or OS appearance, and import/export configurations via JSON file or text.
+- **Lightweight & Pure Frontend**: Manifest v2 with zero background processes, zero telemetry, O(1) DOM observation during streaming, and complete cleanup on disable or uninstall.
 
 ---
 
 ## Installation
 
-### From CodexHost Plugin Center (Recommended)
-
+### CodexHost Plugin Center (Recommended)
 1. Open **Settings → Plugins** in **Codex Desktop**, or **Plugins → Plugin Center** in **CH Web**.
 2. Search for **Theme Background** (`theme-background`), click **Install**, and enable it.
-3. Open the **Theme Background** tab to customize your workspace.
+3. Open the **Theme Background** tab to pick a built-in suite or create your own custom theme.
 
-### From GitHub Release ZIP
-
-1. Download `theme-background-1.0.1.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
+### Local `.zip` Import
+1. Download `theme-background-1.1.0.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
 2. In CodexHost, choose **Import Plugin → Local .zip** and select the downloaded archive.
-3. Enable **Theme Background** — your appearance stays active even after closing the settings page.
+3. Enable **Theme Background** — your theme stays active even after closing the settings page.
 
 ---
 
-## Storage & Cross-Device Sync Model
+## Sync & Privacy
 
-| Data | Where It Lives | Cross-Device Behavior |
+| Data | Storage Location | Cross-Device Behavior |
 | --- | --- | --- |
-| Colors, surface opacity/blur/outlines, schedules, profile snapshots, HTTPS URLs, media UUIDs | CodexHost Host extension storage | Synced automatically across Desktop & CH Web |
-| Local images, videos, fonts, rotation cursor | Local browser / WebView2 / Electron `IndexedDB` | Private to each profile/partition; use **Link file on this device** to bind a local copy while preserving the shared UUID |
+| Colors, surface opacity/blur/outlines, schedules, custom theme profiles, HTTPS URLs, media UUIDs | CodexHost Host extension storage | Synced automatically across Codex Desktop & CH Web |
+| Local images, videos, fonts, rotation state | Local browser / WebView2 / Electron `IndexedDB` | Stored strictly on-device; use **Link file on this device** to bind a local copy to the same shared UUID |
 
 ---
 
-## Development & Packaging
+## Build from Source
 
-Requires **Node.js 24 LTS**, **pnpm 10.32.1**, and **Python 3**.
+Requires **Node.js 24 LTS**, **pnpm 10.32.1**, and **Python 3**:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -63,12 +81,6 @@ pnpm run build
 pnpm run verify
 python scripts/pack.py
 ```
-
-When validating against the official CodexHost `v0.26.0` Zod schema (`packages/shared-contracts`), set `CH_REFERENCE_DIR` and run `pnpm run package`.
-
-- Architecture & protocol: [docs/TECHNICAL_SPEC.md](docs/TECHNICAL_SPEC.md)
-- Local setup & isolated testing: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)
-- Verification & release checklist: [docs/DELIVERY.md](docs/DELIVERY.md)
 
 ---
 

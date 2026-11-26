@@ -1,4 +1,4 @@
-import { clamp, DEFAULT, LAYOUTS, PATTERNS, publicImageUrl, randomSeed, readSource, ROTATION_INTERVALS, ROTATION_MODES, SHADERS } from '../shared/config.ts'
+import { BUILTIN_BACKDROPS, clamp, DEFAULT, LAYOUTS, NATIVE_DEFAULT, PATTERNS, PRESET_ASSET_PATH, publicImageUrl, randomSeed, readSource, ROTATION_INTERVALS, ROTATION_MODES, SHADERS } from '../shared/config.ts'
 import type { Placement, Source, ThemeConfig } from '../shared/config.ts'
 import type { MediaStore } from '../shared/media-db.ts'
 import type { RotationAction } from '../shared/rotation.ts'
@@ -10,15 +10,17 @@ import type { Key } from './i18n.ts'
 import { preserveFocus } from './ui.ts'
 import type { Ui } from './ui.ts'
 
-const SOURCES = ['none', 'still', 'video', 'mesh', 'shader', 'pattern', 'rotation'] as const
+const SOURCES = ['none', 'preset', 'still', 'video', 'mesh', 'shader', 'pattern', 'rotation'] as const
 type SourceGroup = typeof SOURCES[number]
 export type ColorSample = { frame: HTMLCanvasElement; preview: boolean } | { error: 'sampleCors' | 'sampleError' }
 const sourceGroup = (source: Source) => source.kind === 'local-video' ? 'video' : source.kind === 'local-image' || source.kind === 'url' ? 'still' : source.kind
-const isPhoto = (source: Source) => ['url', 'local-image', 'local-video', 'rotation'].includes(source.kind)
+const isPhoto = (source: Source) => ['preset', 'url', 'local-image', 'local-video', 'rotation'].includes(source.kind)
 
 export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, media: MediaStore, library: ReturnType<typeof mediaPage>,
   current: () => ThemeConfig, edit: (patch: Partial<ThemeConfig>) => void, commit: () => void, locked: () => boolean,
-  publishRotation: (poolId: string) => void, toast: (key: Key) => void, effectiveConfig: () => ThemeConfig) {
+  publishRotation: (poolId: string) => void, toast: (key: Key) => void, effectiveConfig: () => ThemeConfig,
+  assetUrl: (path: string) => Promise<string | undefined> = async () => undefined,
+  thumbUrl: (path: string) => Promise<string | undefined> = assetUrl) {
   const { make, text, on, button, check, input, select, slider, choices, card, value, label } = ui
   const previewCard = card(panel, 'preview', 'tb-preview-card')
   const preview = make('div', previewCard, 'tb-preview')
@@ -43,6 +45,38 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
   const sources = choices(fields, 'source', SOURCES, key => void selectSource(key))
   const stillInUse = make('p', fields, 'tb-hint')
   stillInUse.setAttribute('role', 'status')
+  const presetBox = make('div', fields, 'tb-compact')
+  text(make('p', presetBox, 'tb-hint'), 'presetBackdropHint')
+  const presetPicker = make('div', presetBox, 'tb-preset-picker')
+  const presetButtons = BUILTIN_BACKDROPS.map(id => {
+    const btn = make('button', presetPicker, 'tb-preset-pick')
+    btn.type = 'button'
+    btn.dataset.tbBackdropPreset = id
+    const thumb = make('img', btn)
+    thumb.alt = ''
+    thumb.hidden = true
+    thumb.loading = 'lazy'
+    thumb.decoding = 'async'
+    text(make('span', btn), id)
+    on(btn, 'click', () => {
+      if (locked()) return
+      edit({ source: { kind: 'preset', id }, respectReducedTransparency: false, activeProfile: null })
+      commit()
+    })
+    return { id, btn, thumb }
+  })
+  let presetThumbsLoaded = false
+  function loadPresetThumbs() {
+    if (presetThumbsLoaded) return
+    presetThumbsLoaded = true
+    for (const { id, thumb } of presetButtons) {
+      void thumbUrl(PRESET_ASSET_PATH(id)).then(src => {
+        if (!src || signal.aborted || !thumb.isConnected) return
+        thumb.src = src
+        thumb.hidden = false
+      })
+    }
+  }
   const image = make('div', fields, 'tb-compact')
   library.upload(image, 'image', 'localImage', 'imageRules')
   const url = input(image, 'address', 'url')
@@ -101,9 +135,9 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
   let browse: SourceGroup | undefined, previousSource: Source | undefined, editingUrl = false, state: RenderState = { state: 'idle' }
   let sourceTicket = 0
   const remembered: Partial<Record<'image' | 'video', string>> = {}
-  let paused = false, shown = false, poolId = '', renderedPool = '', lastPool: ThemeConfig['rotation'] | undefined, selected: string | null = null, ticket = 0
+  let paused = false, shown = false, previewLoaded = false, poolId = '', renderedPool = '', lastPool: ThemeConfig['rotation'] | undefined, selected: string | null = null, ticket = 0
   let thumbnailController: AbortController | undefined, captureController: AbortController | undefined
-  const backdrop = createBackdrop(preview, signal, media.backgroundBlob, next => { state = next; drawControls() })
+  const backdrop = createBackdrop(preview, signal, media.backgroundBlob, next => { state = next; drawControls() }, { loadAsset: assetUrl })
   async function selectSource(key: SourceGroup) {
     if (locked()) return
     const generation = ++sourceTicket, config = current()
@@ -120,7 +154,9 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
       } catch { if (!signal.aborted && sourceTicket === generation) toast('storageError') }
       return
     }
-    edit({ source: key === 'rotation' ? { kind: key, poolId: config.rotation.poolId } : config.source.kind === key ? config.source : readSource({ kind: key }),
+    edit({ source: key === 'rotation' ? { kind: key, poolId: config.rotation.poolId }
+      : key === 'preset' ? (config.source.kind === 'preset' ? config.source : { kind: 'preset', id: 'default' })
+      : config.source.kind === key ? config.source : readSource({ kind: key }),
       activeProfile: null, ...(key !== 'none' ? { respectReducedTransparency: false } : {}) })
     commit(); render(current(), locked(), shown)
   }
@@ -145,8 +181,8 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
   async function resetBackground() {
     if (!await ui.confirm('resetBackdrop', 'resetPrompt') || locked() || signal.aborted) return
     browse = undefined; editingUrl = false; urlError.hidden = true
-    edit({ source: DEFAULT.source, placement: DEFAULT.placement, videoPlacement: DEFAULT.videoPlacement,
-      regenerateOnReload: DEFAULT.regenerateOnReload, opacity: DEFAULT.opacity, blur: DEFAULT.blur, activeProfile: null })
+    edit({ source: NATIVE_DEFAULT.source, placement: NATIVE_DEFAULT.placement, videoPlacement: NATIVE_DEFAULT.videoPlacement,
+      regenerateOnReload: NATIVE_DEFAULT.regenerateOnReload, opacity: NATIVE_DEFAULT.opacity, blur: NATIVE_DEFAULT.blur, activeProfile: null })
     commit(); render(current(), locked(), shown)
   }
   async function rotate(action: RotationAction) {
@@ -259,6 +295,8 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
     if (!stillInUse.hidden) stillInUse.textContent = ui.t('stillInUse').replace('{source}', ui.t(applied))
     fields.disabled = readOnly
     sources.set(group)
+    presetBox.hidden = group !== 'preset'
+    for (const item of presetButtons) item.btn.setAttribute('aria-pressed', String(source.kind === 'preset' && source.id === item.id))
     image.hidden = group !== 'still'; video.hidden = group !== 'video'; poolCard.hidden = group !== 'rotation'
     if (!editingUrl) value(url, source.kind === 'url' ? source.url : '')
     generator.hidden = !['mesh', 'shader', 'pattern'].includes(group)
@@ -285,8 +323,12 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
     } else if (renderedPool) {
       ticket++; lastPool = undefined; renderedPool = ''; thumbnailController?.abort(); thumbnails.replaceChildren()
     }
+    if (visible && group === 'preset') loadPresetThumbs()
     backdrop.setVisible(visible)
-    backdrop.update(readOnly ? DEFAULT : resolve(config))
+    if (visible || previewLoaded) {
+      previewLoaded = true
+      backdrop.update(readOnly ? NATIVE_DEFAULT : resolve(config))
+    }
     drawControls()
   }
   async function capturePreview(scene: BackdropScene, lifetime: AbortSignal, cors: boolean, width = 480, height = 270) {
@@ -305,8 +347,8 @@ export function backgroundPage(ui: Ui, panel: HTMLElement, signal: AbortSignal, 
           if (state.state === 'ready' || state.state === 'fallback') {
             try { finish(renderer.snapshot()) } catch { finish() }
           }
-        }, { cors })
-        renderer.pause(); renderer.update({ ...DEFAULT, ...scene, blur: 0, opacity: 100 })
+        }, { cors, loadAsset: assetUrl })
+        renderer.pause(); renderer.update({ ...NATIVE_DEFAULT, ...scene, blur: 0, opacity: 100 })
       })
     } finally { renderJob.abort(); slot.remove() }
   }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { TestContext } from 'node:test'
-import { DEFAULT, LAYOUTS, PATTERNS, SHADERS } from '../src/shared/config.ts'
+import { DEFAULT, LAYOUTS, NATIVE_DEFAULT, PATTERNS, SHADERS } from '../src/shared/config.ts'
 import { createFontLoader } from '../src/shared/font-loader.ts'
 import { createBackdrop, imageGeometry } from '../src/render/backdrop-layer.ts'
 import type { RenderState } from '../src/render/backdrop-layer.ts'
@@ -104,8 +104,10 @@ function browser(context: TestContext, initial = 300) {
   })
   const container = new Element(), abort = new AbortController(), states: RenderState[] = []
   return {
-    start: (load = async (_id: string): Promise<Blob | undefined> => undefined, sample = false) =>
-      createBackdrop(container as unknown as HTMLElement, abort.signal, load, state => states.push(state), sample ? { baseColor: () => '#fff' } : {}),
+    start: (load = async (_id: string): Promise<Blob | undefined> => undefined, sample = false,
+      loadAsset?: (path: string) => Promise<string | undefined>) =>
+      createBackdrop(container as unknown as HTMLElement, abort.signal, load, state => states.push(state),
+        { ...(sample ? { baseColor: () => '#fff' } : {}), ...(loadAsset ? { loadAsset } : {}) }),
     resize(width: number, height: number) { refresh([{ contentRect: { width, height } }] as ResizeObserverEntry[], {} as ResizeObserver) },
     tick(time: number) { for (const [id, fn] of [...rafs]) { rafs.delete(id); fn(time) } },
     failDecode() { decodeFailure = true }, mockGL(next: Partial<WebGLRenderingContext>) { gl = next }, fail2d() { supports2d = false },
@@ -182,7 +184,7 @@ test('late Blob cannot replace the current frame; URLs are consumer-owned and re
   assert.deepEqual(layer.pan(12, 40), { ...DEFAULT.placement, panX: 0.46 })
   layer.update({ ...local('new'), opacity: 30, placement: { ...DEFAULT.placement, zoom: 2 } })
   assert.equal(b.images.length, 1)
-  layer.update(DEFAULT)
+  layer.update(NATIVE_DEFAULT)
   layer.dispose(); layer.dispose()
   assert.deepEqual(b.revoked, b.objects)
 })
@@ -341,26 +343,64 @@ test('GIF animates natively with one blur board and only the needed extensions; 
   assert.equal(photo.parent, undefined)
   assert.equal(b.samples, 1)
   assert.equal(b.objects.length, 1)
-  layer.update(DEFAULT); layer.dispose()
+  layer.update(NATIVE_DEFAULT); layer.dispose()
   assert.deepEqual(b.revoked, b.objects)
 })
 
-test('a GL context loss replaces the sampled frame once and retires the old canvas', context => {
+test('a GL context loss replaces the sampled frame once and retires the old canvas; draw loop avoids per-frame getError stalls', context => {
   const b = browser(context), noop = () => {}, object = () => ({})
+  let getErrorCalls = 0
   b.mockGL({ createShader: object, shaderSource: noop, compileShader: noop, getShaderParameter: () => true,
     createProgram: object, attachShader: noop, linkProgram: noop, getProgramParameter: () => true,
     createBuffer: object, getAttribLocation: () => 0, bindBuffer: noop, bufferData: noop, enableVertexAttribArray: noop,
     vertexAttribPointer: noop, useProgram: noop, getUniformLocation: object, uniform1f: noop, uniform2f: noop,
-    getError: () => 0, NO_ERROR: 0, viewport: noop, drawArrays: noop, isContextLost: () => false,
+    getError: () => { getErrorCalls++; return 0 }, NO_ERROR: 0, viewport: noop, drawArrays: noop, isContextLost: () => false,
     deleteShader: noop, deleteProgram: noop, deleteBuffer: noop, getExtension: () => null } as unknown as WebGLRenderingContext)
   const layer = b.start(undefined, true)
   layer.update(shader)
+  b.tick(50); b.tick(100); b.tick(150)
+  assert.equal(getErrorCalls, 1, 'checks gl.getError only once during shader setup, never per animation frame')
   assert.equal(b.samples, 1)
   assert.deepEqual(b.states.at(-1), { state: 'ready', frameDark: true })
   b.setPixel([255, 255, 255, 255]); const [canvas] = b.canvases
   canvas.dispatchEvent(new Event('webglcontextlost'))
-  canvas.dispatchEvent(new Event('webglcontextlost')); b.tick(150)
+  canvas.dispatchEvent(new Event('webglcontextlost')); b.tick(200)
   assert.equal(b.samples, 2)
   assert.deepEqual(b.states.at(-1), { state: 'fallback', effect: 'mesh', frameDark: false })
+  layer.dispose()
+})
+
+test('built-in preset wallpapers resolve via loadAsset, ignore stale generations, and report unavailable when missing', async context => {
+  let resolveOld!: (url: string | undefined) => void
+  const old = new Promise<string | undefined>(resolve => { resolveOld = resolve })
+  const requested: string[] = []
+  const b = browser(context)
+  const layer = b.start(undefined, true, path => {
+    requested.push(path)
+    if (path === 'assets/presets/default.webp') return old
+    if (path === 'assets/presets/glass.webp') return Promise.resolve('data:image/webp;base64,UklGRg==')
+    return Promise.resolve(undefined)
+  })
+  layer.update({ ...DEFAULT, source: { kind: 'preset', id: 'default' } })
+  layer.update({ ...DEFAULT, source: { kind: 'preset', id: 'glass' } })
+  await flush()
+  assert.deepEqual(requested, ['assets/presets/default.webp', 'assets/presets/glass.webp'])
+  assert.deepEqual(b.states.at(-1), { state: 'ready', frameDark: true })
+  assert.equal(b.images.length, 1)
+  assert.equal(b.images[0].src, 'data:image/webp;base64,UklGRg==')
+  resolveOld('data:image/webp;base64,STALE')
+  await flush()
+  assert.equal(b.images.length, 1)
+  layer.update({ ...DEFAULT, source: { kind: 'preset', id: 'forest' } })
+  await flush()
+  assert.deepEqual(b.states.at(-1), { state: 'unavailable', reason: 'image' })
+  // Default animated WebP preset mounts as a live native image and freezes on pause / reduced motion
+  const live = b.start(undefined, true, path => Promise.resolve(path === 'assets/presets/default.webp' ? 'data:image/webp;base64,UklGRg==' : undefined))
+  live.update({ ...DEFAULT, source: { kind: 'preset', id: 'default' } })
+  await flush()
+  assert.deepEqual(b.states.at(-1), { state: 'ready', frameDark: true, animatedImage: true })
+  live.pause()
+  assert.equal(b.images.at(-1)?.parent, undefined)
+  live.dispose()
   layer.dispose()
 })

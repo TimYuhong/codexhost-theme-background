@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { DEFAULT, exportConfig, importConfig, MAX_PROFILES, MAX_ROTATION_ITEMS, MAX_SETTINGS, normalizeConfig, PATTERNS, profileOverrides, profileSnapshot, scheduledConfig, SHADERS, scheduledProfile } from '../src/shared/config.ts'
+import { BUILTIN_BACKDROPS, DEFAULT, exportConfig, FONT_PRESETS, importConfig, MAX_PROFILES, MAX_ROTATION_ITEMS, MAX_SETTINGS, NATIVE_DEFAULT, normalizeConfig, PATTERNS, profileOverrides, profileSnapshot, scheduledConfig, SHADERS, scheduledProfile } from '../src/shared/config.ts'
 import type { Source } from '../src/shared/config.ts'
 import { readAppearance } from '../src/shared/config.ts'
+import { blankCustomDraft, upsertCustomProfile } from '../src/page/profiles.ts'
 
 const read = (raw: unknown) => {
   const result = normalizeConfig(raw)
@@ -14,16 +15,20 @@ const uuid = (n: number) => `039d48ec-5920-4c84-ba7d-${String(n).padStart(12, '0
 test('fresh defaults are independent, v1 reads migrate, and future versions remain read-only', () => {
   const first = read(undefined), second = read(undefined)
   assert.deepEqual(first, DEFAULT)
+  assert.deepEqual(first.source, { kind: 'preset', id: 'default' })
+  assert.equal(first.accent, '#00ef07')
+  assert.equal(first.schemeOverride, 'dark')
   first.placement.zoom = 2
   first.strokes.bg.width = 2
   first.rotation.items.push(uuid(0))
   assert.deepEqual(second, DEFAULT)
   const v1 = { schemaVersion: 1, plate: 11, accent: '#ABCDEF', placement: { zoom: 2 } }
-  assert.deepEqual(read(v1), { ...DEFAULT, accent: '#abcdef', opacities: { bg: 10, sidebar: 10, card: 100, input: 100, settings: 10 },
-    placement: { ...DEFAULT.placement, zoom: 2 } })
+  assert.deepEqual(read(v1), { ...NATIVE_DEFAULT, accent: '#abcdef', opacities: { bg: 10, sidebar: 10, card: 100, input: 100, settings: 10 },
+    placement: { ...NATIVE_DEFAULT.placement, zoom: 2 } })
   assert.deepEqual(read({ schemaVersion: 1 }).opacities, { bg: 75, sidebar: 75, card: 100, input: 100, settings: 75 })
   const existing = { bg: 75, sidebar: 90, card: 100, input: 100, settings: 95 }
   assert.deepEqual(read({ schemaVersion: 2, opacities: existing }).opacities, existing)
+  assert.deepEqual(read({ ...NATIVE_DEFAULT, source: { kind: 'preset', id: 'moonlit' } }).source, { kind: 'preset', id: 'default' })
   assert.equal(v1.schemaVersion, 1)
   assert.equal(read(v1).respectReducedTransparency, false)
   for (const raw of [null, [], false, '']) assert.deepEqual(normalizeConfig(raw), { state: 'read-only', reason: 'format' })
@@ -31,7 +36,9 @@ test('fresh defaults are independent, v1 reads migrate, and future versions rema
 })
 test('all media and generators round trip and invalid locations are rejected', () => {
   const sources: Source[] = [
-    { kind: 'none' }, { kind: 'url', url: 'https://example.com/image.png' },
+    { kind: 'none' },
+    ...BUILTIN_BACKDROPS.map(id => ({ kind: 'preset', id }) as const),
+    { kind: 'url', url: 'https://example.com/image.png' },
     { kind: 'local-image', id: uuid(0) }, { kind: 'local-video', id: uuid(1), mime: 'video/webm' },
     { kind: 'rotation', poolId: DEFAULT.rotation.poolId },
     { kind: 'mesh', seed: 99, scale: 1.7, intensity: 0 },
@@ -44,23 +51,31 @@ test('all media and generators round trip and invalid locations are rejected', (
     assert.deepEqual(importConfig(exportConfig(config)), { state: 'ready', config })
   }
   for (const url of ['http://example.com/', 'javascript:alert(1)', 'blob:https://example.com/x', '/relative', 'https://a:b@example.com/', `https://a.test/${'x'.repeat(2048)}`]) {
-    assert.deepEqual(read({ ...DEFAULT, source: { kind: 'url', url } }).source, DEFAULT.source)
+    assert.deepEqual(read({ ...DEFAULT, source: { kind: 'url', url } }).source, NATIVE_DEFAULT.source)
   }
-  assert.deepEqual(read({ ...DEFAULT, source: { kind: 'local-image', id: uuid(0).toUpperCase() } }).source, sources[2])
-  for (const source of [{ kind: 'local-image', id: 'bogus' }, { kind: 'local-video', id: uuid(0), mime: 'image/png' }, { kind: 'rotation', poolId: uuid(0) }]) {
-    assert.deepEqual(read({ ...DEFAULT, source }).source, DEFAULT.source)
+  assert.deepEqual(read({ ...DEFAULT, source: { kind: 'local-image', id: uuid(0).toUpperCase() } }).source, { kind: 'local-image', id: uuid(0) })
+  for (const source of [{ kind: 'preset', id: 'unknown' }, { kind: 'local-image', id: 'bogus' }, { kind: 'local-video', id: uuid(0), mime: 'image/png' }, { kind: 'rotation', poolId: uuid(0) }]) {
+    assert.deepEqual(read({ ...DEFAULT, source }).source, NATIVE_DEFAULT.source)
   }
+  for (const preset of FONT_PRESETS) {
+    const raw = { ...DEFAULT, font: { enabled: false, mediaId: null, mime: null, preset } }
+    const normalized = read(raw)
+    assert.equal(normalized.font.preset, preset === 'system' ? undefined : preset)
+    assert.deepEqual(importConfig(exportConfig(normalized)), { state: 'ready', config: normalized })
+  }
+  assert.equal(importConfig(JSON.stringify({ ...DEFAULT, font: { enabled: false, mediaId: null, mime: null, preset: 'bogus' } })).state, 'read-only')
+  assert.equal(importConfig(JSON.stringify({ ...DEFAULT, source: { kind: 'preset', id: 'bogus' } })).state, 'read-only')
 })
 test('v2 bounds, color, font magic MIME, and placement are normalized independently', () => {
-  const config = read({ ...DEFAULT, accent: '#A1C000', schemeOverride: 'dark', opacity: NaN, blur: 99,
+  const config = read({ ...NATIVE_DEFAULT, accent: '#A1C000', schemeOverride: 'dark', opacity: NaN, blur: 99,
     opacities: { bg: 98, sidebar: -1 }, blurs: { input: 99, card: 4.7 },
     strokes: { bg: { width: 0.7, color: 'custom', customColor: '#30A1FF' }, card: { width: 999, color: 'bad' } },
     respectReducedTransparency: true, regenerateOnReload: true, font: { mediaId: uuid(0), enabled: true, mime: 'font/woff2' },
     placement: { mode: 'tile', zoom: 100, panX: -1, panY: Infinity }, videoPlacement: { mode: 'stretch', zoom: 2, panX: 1 },
     source: { kind: 'shader', preset: 'other', seed: 1.9, scale: -3, speed: Infinity } })
-  assert.deepEqual(config, { ...DEFAULT, accent: '#a1c000', schemeOverride: 'dark', blur: 60,
-    opacities: { ...DEFAULT.opacities, bg: 100, sidebar: 0 }, blurs: { ...DEFAULT.blurs, input: 40, card: 5 },
-    strokes: { ...DEFAULT.strokes, bg: { width: 0.5, color: 'custom', customColor: '#30a1ff' }, card: { ...DEFAULT.strokes.card, width: 4 } },
+  assert.deepEqual(config, { ...NATIVE_DEFAULT, accent: '#a1c000', schemeOverride: 'dark', blur: 60,
+    opacities: { ...NATIVE_DEFAULT.opacities, bg: 100, sidebar: 0 }, blurs: { ...NATIVE_DEFAULT.blurs, input: 40, card: 5 },
+    strokes: { ...NATIVE_DEFAULT.strokes, bg: { width: 0.5, color: 'custom', customColor: '#30a1ff' }, card: { ...NATIVE_DEFAULT.strokes.card, width: 4 } },
     respectReducedTransparency: true, regenerateOnReload: true, font: { mediaId: uuid(0), enabled: true, mime: 'font/woff2' },
     placement: { mode: 'tile', zoom: 4, panX: 0, panY: 0.5 }, videoPlacement: { mode: 'stretch', zoom: 2, panX: 1, panY: 0.5 },
     source: { kind: 'shader', preset: 'aurora', seed: 1, scale: 0.5, speed: 0.35 } })
@@ -108,6 +123,56 @@ test('old profiles inherit all four media fields; deep snapshots and explicit of
   assert.deepEqual(profileOverrides(legacy), legacy.appearance)
   assert.equal(active.respectReducedTransparency, config.respectReducedTransparency)
   assert.deepEqual(importConfig(exportConfig(config)), { state: 'ready', config })
+})
+
+test('custom editable themes start independent of built-ins, support user media/colors/fonts, update preserving UUID/createdAt, and respect MAX_PROFILES', () => {
+  const blank = blankCustomDraft()
+  assert.equal(blank.name, '')
+  assert.deepEqual(blank.source, { kind: 'none' })
+  assert.equal(blank.appearance.accent, null)
+  assert.equal(blank.appearance.schemeOverride, 'auto')
+  assert.equal(blank.appearance.blurs.card, 0)
+  assert.equal(blank.appearance.blurs.input, 0)
+
+  const localWallpaper = uuid(77)
+  const localFont = uuid(78)
+  const created = upsertCustomProfile([], {
+    ...blank,
+    name: '  My Own Wallpaper Theme  ',
+    appearance: { ...blank.appearance, accent: '#3DA58A', schemeOverride: 'dark' },
+    source: { kind: 'local-image', id: localWallpaper },
+    font: { enabled: true, mediaId: localFont, mime: 'font/woff2' },
+  }, undefined, 1000)
+  assert.ok(created)
+  assert.equal(created.profiles.length, 1)
+  assert.equal(created.profile.name, 'My Own Wallpaper Theme')
+  assert.equal(created.profile.createdAt, 1000)
+  assert.equal(created.profile.appearance.accent, '#3da58a')
+  assert.deepEqual(created.profile.source, { kind: 'local-image', id: localWallpaper })
+  assert.deepEqual(created.profile.font, { enabled: true, mediaId: localFont, mime: 'font/woff2' })
+
+  const edited = upsertCustomProfile(created.profiles, {
+    ...blank,
+    name: 'My Updated Look',
+    appearance: { ...blank.appearance, accent: '#78b8f8', opacities: { ...blank.appearance.opacities, bg: 22 } },
+    source: { kind: 'url', url: 'https://example.test/my-bg.webp' },
+  }, created.profile.id, 2000)
+  assert.ok(edited)
+  assert.equal(edited.profiles.length, 1)
+  assert.equal(edited.profile.id, created.profile.id, 'editing preserves UUID for schedule links')
+  assert.equal(edited.profile.createdAt, 1000, 'editing preserves original createdAt')
+  assert.equal(edited.profile.name, 'My Updated Look')
+  assert.equal(edited.profile.appearance.accent, '#78b8f8')
+  assert.equal(edited.profile.appearance.opacities.bg, 20, 'snaps opacity to 5% steps')
+  assert.deepEqual(edited.profile.source, { kind: 'url', url: 'https://example.test/my-bg.webp' })
+
+  const roundTrip = read({ ...DEFAULT, profiles: edited.profiles, activeProfile: edited.profile.id })
+  assert.deepEqual(importConfig(exportConfig(roundTrip)), { state: 'ready', config: roundTrip })
+
+  assert.equal(upsertCustomProfile(edited.profiles, { ...blank, name: '   ' }), null)
+  const full = Array.from({ length: MAX_PROFILES }, (_, n) => ({ id: uuid(n), name: `P${n}`, createdAt: n, appearance: readAppearance(DEFAULT) }))
+  assert.equal(upsertCustomProfile(full, { ...blank, name: 'Overflow' }), null)
+  assert.ok(upsertCustomProfile(full, { ...blank, name: 'Edit Existing When Full' }, full[0].id))
 })
 
 test('import rejects explicit bad profile media and pool links and names the affected profile', () => {

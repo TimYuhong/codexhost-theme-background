@@ -8,12 +8,16 @@ import vm from 'node:vm'
 import ts from 'typescript'
 
 const KIB = 1024, MIB = KIB * KIB, JS_BUDGET = 512 * KIB
-const ICON_LIMIT = 128 * KIB, SHOT_LIMIT = 512 * KIB
-const names = [
+const ICON_LIMIT = 128 * KIB, SHOT_LIMIT = 512 * KIB, PRESET_LIMIT = 512 * KIB, ANIMATED_PRESET_LIMIT = 8 * MIB
+const rootFiles = [
   'LICENSE', 'desktop.css', 'desktop.js', 'icon.png', 'manifest.json',
   'page.css', 'page.mjs', 'preview-dark.webp', 'preview-light.webp', 'preview-settings.webp',
   'web.css', 'web.mjs',
 ]
+const presetFiles = [
+  'assets/presets/default.webp', 'assets/presets/forest.webp', 'assets/presets/glass.webp', 'assets/presets/minimal.webp',
+]
+const names = [...rootFiles, ...presetFiles].sort()
 const manifestSource = await readFile('manifest.json')
 const pkg = JSON.parse(await readFile('package.json', 'utf8'))
 
@@ -66,16 +70,31 @@ function jsCheck(name, text) {
   walk(file)
 }
 
+async function walkFiles(dir, prefix = '') {
+  const out = []
+  for (const name of (await readdir(dir)).sort()) {
+    const full = join(dir, name)
+    const rel = prefix ? `${prefix}/${name}` : name
+    const stat = await lstat(full)
+    if (stat.isDirectory()) out.push(...await walkFiles(full, rel))
+    else out.push(rel)
+  }
+  return out.sort()
+}
+
 async function verify(dir, print = false) {
   assert.ok((await lstat(dir)).isDirectory(), `${dir}: expected a real directory`)
-  const entries = (await readdir(dir)).sort()
+  const entries = await walkFiles(dir)
   for (const name of names) assert.ok(entries.includes(name), `${name}: missing dist file`)
   for (const name of entries) assert.ok(names.includes(name), `${name}: unexpected dist file`)
   for (const name of names) {
     const stat = await lstat(join(dir, name))
     assert.ok(stat.isFile(), `${name}: expected a regular file`)
     const js = /\.(?:m?js)$/.test(name)
-    const host = name === 'manifest.json' ? 128 * KIB : name === 'icon.png' ? ICON_LIMIT : name.endsWith('.webp') ? SHOT_LIMIT : js ? 2 * MIB : name.endsWith('.css') ? 256 * KIB : 16 * MIB
+    const host = name === 'manifest.json' ? 128 * KIB : name === 'icon.png' ? ICON_LIMIT
+      : name === 'assets/presets/default.webp' ? ANIMATED_PRESET_LIMIT
+      : name.startsWith('assets/presets/') ? PRESET_LIMIT : name.endsWith('.webp') ? SHOT_LIMIT
+      : js ? 2 * MIB : name.endsWith('.css') ? 256 * KIB : 16 * MIB
     assert.ok(stat.size > 0 && stat.size <= host, `${name}: ${stat.size} bytes outside Host limit ${host}`)
     if (js) assert.ok(stat.size <= JS_BUDGET, `${name}: ${stat.size} bytes exceeds project budget ${JS_BUDGET}`)
     if (print) console.log(`${name}\t${stat.size}`)
@@ -89,7 +108,7 @@ async function verify(dir, print = false) {
   assert.deepEqual([m.page.style, m.desktop.style, m.web.style], ['page.css', 'desktop.css', 'web.css'], 'manifest.json: bad CSS paths')
   assert.equal(m.icon, 'icon.png', 'manifest.json: bad icon path')
   assert.deepEqual(m.screenshots, ['preview-dark.webp', 'preview-settings.webp', 'preview-light.webp'], 'manifest.json: bad screenshots list')
-  for (const name of [m.icon, ...m.screenshots]) imageCheck(name, await readFile(join(dir, name)))
+  for (const name of [m.icon, ...m.screenshots, ...presetFiles]) imageCheck(name, await readFile(join(dir, name)))
   for (const name of names.filter(name => name.endsWith('.css'))) cssCheck(name, await readFile(join(dir, name), 'utf8'))
   for (const [name, exported] of [['page.mjs', 'mount'], ['web.mjs', 'activate'], ['desktop.js', undefined]]) {
     const path = join(dir, name), text = await readFile(path, 'utf8')

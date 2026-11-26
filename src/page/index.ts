@@ -1,5 +1,5 @@
 import type { Dispose, PageApi } from '../host-api.ts'
-import { DEFAULT, scheduledConfig, STROKE_COLORS, SURFACES } from '../shared/config.ts'
+import { ANIMATED_PRESETS, DEFAULT, NATIVE_DEFAULT, PRESET_ASSET_PATH, scheduledConfig, STROKE_COLORS, SURFACES } from '../shared/config.ts'
 import type { ThemeConfig } from '../shared/config.ts'
 import { createMediaStore } from '../shared/media-db.ts'
 import { editSettings, openNotices, watchFocus } from '../shared/sync.ts'
@@ -30,7 +30,7 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     if (signal.aborted) return
     if (notice.type === 'settings-committed' || notice.type === 'settings-observed') void editor.read()
     if (notice.type === 'media-changed') {
-      background.retry(notice.id); library.changed(notice.id); void library.refresh()
+      background.retry(notice.id); profiles.retryMedia(notice.id); library.changed(notice.id); void library.refresh()
     }
     if (notice.type === 'rotation-changed') background.syncRotation(notice.poolId)
   })
@@ -108,16 +108,73 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     win.clearTimeout(toastTimer)
     toastTimer = win.setTimeout(() => { message.hidden = true }, 3600)
   }
+  const assetUrls = new Map<string, Promise<string | undefined>>()
+  const assetUrl = (path: string) => {
+    let cached = assetUrls.get(path)
+    if (!cached) {
+      cached = api.assets?.url ? api.assets.url(path).catch(() => { assetUrls.delete(path); return undefined }) : Promise.resolve(undefined)
+      assetUrls.set(path, cached)
+    }
+    return cached
+  }
+  const animatedPaths = new Set([...ANIMATED_PRESETS].map(id => PRESET_ASSET_PATH(id)))
+  const posterUrls = new Map<string, Promise<string | undefined>>()
+  const createdPosterUrls: string[] = []
+  const thumbAssetUrl = (path: string) => {
+    if (!animatedPaths.has(path)) return assetUrl(path)
+    let cached = posterUrls.get(path)
+    if (!cached) {
+      cached = (async () => {
+        const src = await assetUrl(path)
+        if (!src || signal.aborted) return undefined
+        const img = doc.createElement('img')
+        img.decoding = 'async'
+        const detach = () => img.removeAttribute('src')
+        signal.addEventListener('abort', detach, { once: true })
+        try {
+          img.src = src
+          await img.decode()
+          if (signal.aborted || !img.naturalWidth || !img.naturalHeight) return undefined
+          const canvas = doc.createElement('canvas')
+          const scale = Math.min(1, 420 / Math.max(img.naturalWidth, img.naturalHeight))
+          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
+          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
+          const ctx = canvas.getContext('2d')
+          if (!ctx || typeof canvas.toBlob !== 'function') return src
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.84))
+          if (!blob || signal.aborted) return signal.aborted ? undefined : src
+          const poster = URL.createObjectURL(blob)
+          createdPosterUrls.push(poster)
+          return poster
+        } catch {
+          return signal.aborted ? undefined : src
+        } finally {
+          signal.removeEventListener('abort', detach)
+          detach()
+        }
+      })()
+      posterUrls.set(path, cached)
+    }
+    return cached
+  }
   const media = createMediaStore()
+  const notifyMedia = (id: string, op: 'put' | 'delete') => {
+    notices.send({ type: 'media-changed', id, op })
+    background.retry(id)
+    profiles.retryMedia(id)
+    library.changed(id)
+    void library.refresh()
+  }
   const library = mediaPage(ui, panels.font, panels.background, signal, media, current, edit, editor.flush, locked, (id, op) => {
-    notices.send({ type: 'media-changed', id, op }); background.retry(id); library.changed(id)
+    notices.send({ type: 'media-changed', id, op }); background.retry(id); profiles.retryMedia(id); library.changed(id)
   }, render, toast)
   const background = backgroundPage(ui, panels.background, signal, media, library, current, edit, commit, locked,
     poolId => notices.send({ type: 'rotation-changed', poolId }), toast,
-    () => scheduledConfig(editor.confirmed ?? current(), systemScheme()).config)
+    () => scheduledConfig(editor.confirmed ?? current(), systemScheme()).config, assetUrl, thumbAssetUrl)
   const colors = colorsPage(ui, panels.colors, patch => edit({ ...patch, activeProfile: null }), locked, commit, background.capture, toast)
   const surfaces = interfacePage(ui, panels.interface, signal, current, edit, commit, locked, toast)
-  const profiles = profilesPage(ui, panels.profiles, signal, current, edit, editor.flush, toast, locked)
+  const profiles = profilesPage(ui, panels.profiles, signal, current, edit, editor.flush, toast, locked, assetUrl, media, notifyMedia, thumbAssetUrl)
   function switchTab(next: Tab) {
     if (tab === next) return
     commit(); tab = next
@@ -146,7 +203,7 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     pauseSchedule.disabled = !draft.schedule.enabled
     const description = profile ? ui.t('scheduledNotice').replace('{name}', profile.name) : ''
     if (scheduleLabel.textContent !== description) scheduleLabel.textContent = description
-    colors(draft, readOnly); surfaces(draft, readOnly); profiles(draft, readOnly)
+    colors(draft, readOnly); surfaces(draft, readOnly); profiles(draft, readOnly, tab === 'profiles')
     library.render(draft, readOnly); background.render(draft, readOnly, tab === 'background')
   }
   const offLocale = api.onLocaleChange(locale => { ui.localize(locale); render() })
@@ -166,7 +223,8 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     lifetime.abort()
     api.signal.removeEventListener('abort', dispose)
     responsive.disconnect()
-    editor.dispose(); notices.close(); media.close()
+    editor.dispose(); notices.close(); media.close(); assetUrls.clear(); posterUrls.clear()
+    for (const url of createdPosterUrls.splice(0)) URL.revokeObjectURL(url)
     offLocale(); offScheme(); offFocus()
     win.clearTimeout(toastTimer); win.clearInterval(scheduleTimer)
     page.remove()
@@ -202,8 +260,8 @@ function interfacePage(ui: Ui, panel: HTMLElement, signal: AbortSignal, current:
   text(make('p', policy, 'tb-hint'), 'reducedHint')
   button(policy, 'restoreInterface', async () => {
     if (!await ui.confirm('restoreInterface', 'resetPrompt') || signal.aborted || locked()) return
-    edit({ opacities: DEFAULT.opacities, blurs: DEFAULT.blurs, strokes: DEFAULT.strokes,
-      respectReducedTransparency: DEFAULT.respectReducedTransparency, activeProfile: null })
+    edit({ opacities: NATIVE_DEFAULT.opacities, blurs: NATIVE_DEFAULT.blurs, strokes: NATIVE_DEFAULT.strokes,
+      respectReducedTransparency: NATIVE_DEFAULT.respectReducedTransparency, activeProfile: null })
     save(); toast('restored')
   })
   return (draft: ThemeConfig, readOnly: boolean) => {

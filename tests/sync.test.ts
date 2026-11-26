@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { JsonObject, StorageApi } from '../src/host-api.ts'
-import { DEFAULT, MAX_SETTINGS, readAppearance, UUID4 } from '../src/shared/config.ts'
+import { DEFAULT, MAX_SETTINGS, NATIVE_DEFAULT, readAppearance, UUID4 } from '../src/shared/config.ts'
 import { mediaPage } from '../src/page/library.ts'
+import { profilesPage } from '../src/page/profiles.ts'
+import { createOtterPet, OTTER_ACCENT_PATH, OTTER_BODY_PATH } from '../src/shared/otter-pet.ts'
 import type { MediaRecord, MediaStore } from '../src/shared/media-db.ts'
 import { fixtures } from './page-fixture.ts'
 import { CHANNEL, editSettings, openNotices, readSettings, uuid, watchFocus } from '../src/shared/sync.ts'
@@ -164,7 +166,7 @@ test('readback mismatch and failed writes retain the draft; disposal suppresses 
 
 test('oversized sibling values block the envelope write and preserve the draft', async () => {
   const h = host(), page = editSettings(h.storage, () => {}, () => {})
-  const values = { ...h.values, extra: '' }
+  const values = { ...h.values, theme: structuredClone(NATIVE_DEFAULT), extra: '' }
   const overhead = Buffer.byteLength(JSON.stringify({ settingsRevision: Number.MAX_SAFE_INTEGER, values }))
   const extra = '字'.repeat(Math.floor((MAX_SETTINGS - overhead) / 3))
   h.publish({ ...values, extra })
@@ -208,6 +210,332 @@ test('re-association from a saved profile reuses its UUID and commits the Blob b
     assert.equal(page.draft?.respectReducedTransparency, true)
     assert.equal(h.stats.writes, 0)
   } finally { signal.abort(); page.dispose() }
+})
+
+test('built-in preset cards have no customize button; custom editor imports local wallpaper after IDB commit and saves independently', async () => {
+  const h = host(), signal = new AbortController(), browser = fixtures(signal.signal)
+  const commitBlob = deferred<void>(), stored: MediaRecord[] = [], notices: string[] = []
+  const page = editSettings(h.storage, () => {}, () => {})
+  h.publish({ theme: { ...DEFAULT, accent: '#e5a952', source: { kind: 'preset', id: 'default' } } })
+  await page.read()
+  const store = {
+    async list(kind: MediaRecord['kind']) { return stored.filter(item => item.kind === kind) },
+    async backgroundBlob(id: string, kind: 'image' | 'video') { return stored.find(item => item.id === id && item.kind === kind)?.blob },
+    async put(row: MediaRecord) { await commitBlob.promise; stored.push(row) },
+  } as unknown as MediaStore
+  const panel = browser.panel('profiles')
+  const renderProfiles = profilesPage(browser.ui, panel, signal.signal, () => page.draft!, page.editMany, page.flush, () => {}, () => page.readOnly,
+    async () => undefined, store, id => notices.push(id))
+  try {
+    renderProfiles(page.draft!, page.readOnly)
+    // Built-in cards must not expose any customize button
+    assert.equal(browser.root.find(node => 'tbCustomize' in node.dataset), undefined)
+    assert.ok(browser.root.find(node => node.dataset.tbPreset === 'default'))
+
+    // Open independent custom theme editor
+    const addBtn = browser.root.find(node => 'tbAddProfile' in node.dataset)!
+    assert.ok(addBtn)
+    addBtn.click()
+    await turn()
+
+    // Editor must not offer built-in presets, and must expose direct local image import
+    const upload = browser.root.find(node => node.dataset.tbEditorUpload === 'image')!
+    assert.ok(upload)
+    upload.files = [new File(['GIF89a'], 'my-wallpaper.gif')]
+    upload.dispatchEvent(new Event('change'))
+    await turn()
+    assert.deepEqual(notices, [], 'must not broadcast media-changed before IDB commit')
+    commitBlob.resolve()
+    await turn(); await turn()
+    assert.equal(stored.length, 1)
+    assert.deepEqual(notices, [stored[0].id], 'broadcasts media-changed only after IDB commit')
+
+    // Name and save & apply custom theme
+    const dialog = browser.root.find(node => node.className.includes('tb-dialog'))!
+    const nameInput = dialog.find(node => node.className === '' && 'maxLength' in node)!
+    nameInput.value = 'My Independent Theme'
+    nameInput.dispatchEvent(new Event('input'))
+    const saveApply = dialog.find(node => node.textContent === 'Save & apply')!
+    saveApply.click()
+    await turn(); await turn()
+
+    assert.equal(page.confirmed?.profiles.length, 1)
+    const saved = page.confirmed!.profiles[0]
+    assert.equal(saved.name, 'My Independent Theme')
+    assert.deepEqual(saved.source, { kind: 'local-image', id: stored[0].id })
+    assert.equal(saved.appearance.accent, null, 'independent of active built-in accent')
+    assert.equal(page.confirmed?.activeProfile, saved.id)
+
+    // Save current active theme color/appearance directly via header button
+    page.editMany({ accent: '#33aa88', schemeOverride: 'light', activeProfile: null })
+    await page.flush()
+    renderProfiles(page.draft!, page.readOnly)
+    const saveCurrent = browser.root.find(node => 'tbSaveCurrentProfile' in node.dataset)!
+    assert.ok(saveCurrent)
+    saveCurrent.click()
+    await turn()
+    const currentDialog = browser.root.find(node => node.className.includes('tb-dialog'))!
+    const currentName = currentDialog.find(node => node.className === '' && 'maxLength' in node)!
+    currentName.value = 'My Current Color Theme'
+    currentName.dispatchEvent(new Event('input'))
+    currentDialog.find(node => node.textContent === 'Save')!.click()
+    await turn(); await turn()
+    assert.equal(page.confirmed?.profiles.length, 2)
+    const savedCurrent = page.confirmed!.profiles[1]
+    assert.equal(savedCurrent.name, 'My Current Color Theme')
+    assert.equal(savedCurrent.appearance.accent, '#33aa88')
+    assert.equal(savedCurrent.appearance.schemeOverride, 'light')
+
+    // Inside blank editor, "Use current color" pulls ONLY accent + scheme without copying active wallpaper
+    addBtn.click()
+    await turn()
+    const blankDialog = browser.root.find(node => node.className.includes('tb-dialog'))!
+    blankDialog.find(node => 'tbUseCurrentColor' in node.dataset)!.click()
+    const blankName = blankDialog.find(node => node.className === '' && 'maxLength' in node)!
+    blankName.value = 'Color Only Import'
+    blankName.dispatchEvent(new Event('input'))
+    blankDialog.find(node => node.textContent === 'Save')!.click()
+    await turn(); await turn()
+    const colorOnly = page.confirmed!.profiles[2]
+    assert.equal(colorOnly.appearance.accent, '#33aa88')
+    assert.equal(colorOnly.appearance.schemeOverride, 'light')
+    assert.deepEqual(colorOnly.source, { kind: 'none' }, 'keeps independent blank wallpaper')
+  } finally { signal.abort(); page.dispose() }
+})
+
+test('saved custom local-video profile card renders a captured poster frame and immediately releases the temporary video URL', async context => {
+  const h = host(), signal = new AbortController(), browser = fixtures(signal.signal)
+  const videoId = uuid(), videoBlob = new Blob(['mp4data'], { type: 'video/mp4' })
+  const posterBlob = new Blob(['webpdata'], { type: 'image/webp' })
+  const created: string[] = [], revoked: string[] = []
+  let uid = 0
+  context.mock.method(URL, 'createObjectURL', () => { const url = `blob:thumb/${++uid}`; created.push(url); return url })
+  context.mock.method(URL, 'revokeObjectURL', (url: string) => { revoked.push(url) })
+
+  const origCreate = browser.ui.doc.createElement.bind(browser.ui.doc)
+  browser.ui.doc.createElement = ((tag: string) => {
+    const el = origCreate(tag) as unknown as Record<string, unknown>
+    if (tag === 'video') {
+      let currentSrc = ''
+      Object.defineProperty(el, 'src', {
+        get: () => currentSrc,
+        set: (v: string) => {
+          currentSrc = v
+          if (v) queueMicrotask(() => (el as unknown as EventTarget).dispatchEvent(new Event('loadeddata')))
+        },
+      })
+    }
+    if (tag === 'canvas') {
+      el.getContext = () => ({ drawImage() {} })
+      el.toBlob = (cb: (b: Blob | null) => void) => cb(posterBlob)
+    }
+    return el as unknown as HTMLElement
+  }) as typeof browser.ui.doc.createElement
+
+  const page = editSettings(h.storage, () => {}, () => {})
+  h.publish({ theme: {
+    ...DEFAULT,
+    profiles: [{
+      id: uuid(), name: 'Video Look', createdAt: 1,
+      appearance: readAppearance({ accent: '#00ef07', schemeOverride: 'dark' }),
+      source: { kind: 'local-video', id: videoId, mime: 'video/mp4' },
+    }],
+  } })
+  await page.read()
+  const store = {
+    async list() { return [] },
+    async backgroundBlob(id: string, kind: 'image' | 'video') { return id === videoId && kind === 'video' ? videoBlob : undefined },
+  } as unknown as MediaStore
+  const panel = browser.panel('profiles')
+  const renderProfiles = profilesPage(browser.ui, panel, signal.signal, () => page.draft!, page.editMany, page.flush, () => {}, () => page.readOnly,
+    async () => undefined, store)
+  try {
+    renderProfiles(page.draft!, page.readOnly)
+    await turn(); await turn(); await turn()
+    const card = browser.root.find(node => node.className.includes('tb-custom-card'))!
+    const img = card.find(node => node.className === 'tb-preset-img')!
+    assert.equal(img.hidden, false, 'captured poster frame must be shown on saved video profile card')
+    assert.equal(img.src, 'blob:thumb/2')
+    assert.deepEqual(revoked, ['blob:thumb/1'], 'temporary video ObjectURL is revoked immediately after poster capture')
+  } finally {
+    signal.abort()
+    page.dispose()
+  }
+  assert.deepEqual(revoked, created, 'poster ObjectURL is revoked on dispose')
+})
+
+test('profilesPage defers thumbnail fetches while hidden and removes signal listeners when cards re-render', async context => {
+  const h = host(), signal = new AbortController(), browser = fixtures(signal.signal)
+  const imgId = uuid(), imgBlob = new Blob(['png'], { type: 'image/png' })
+  let uid = 0
+  const revoked: string[] = []
+  context.mock.method(URL, 'createObjectURL', () => `blob:lazy/${++uid}`)
+  context.mock.method(URL, 'revokeObjectURL', (u: string) => { revoked.push(u) })
+
+  let signalListeners = 0
+  const origAdd = signal.signal.addEventListener.bind(signal.signal)
+  const origRem = signal.signal.removeEventListener.bind(signal.signal)
+  signal.signal.addEventListener = ((type: string, fn: EventListenerOrEventListenerObject, opts?: boolean | AddEventListenerOptions) => {
+    if (type === 'abort') signalListeners++
+    return origAdd(type, fn, opts)
+  }) as typeof signal.signal.addEventListener
+  signal.signal.removeEventListener = ((type: string, fn: EventListenerOrEventListenerObject, opts?: boolean | EventListenerOptions) => {
+    if (type === 'abort') signalListeners--
+    return origRem(type, fn, opts)
+  }) as typeof signal.signal.removeEventListener
+
+  const assetCalls: string[] = []
+  const page = editSettings(h.storage, () => {}, () => {})
+  const profId = uuid()
+  h.publish({ theme: {
+    ...DEFAULT,
+    profiles: [{
+      id: profId, name: 'Lazy Look', createdAt: 1,
+      appearance: readAppearance({ accent: '#3da58a', schemeOverride: 'dark' }),
+      source: { kind: 'local-image', id: imgId },
+    }],
+  } })
+  await page.read()
+  const store = {
+    async list() { return [] },
+    async backgroundBlob(id: string) { return id === imgId ? imgBlob : undefined },
+  } as unknown as MediaStore
+  const panel = browser.panel('profiles')
+  const renderProfiles = profilesPage(browser.ui, panel, signal.signal, () => page.draft!, page.editMany, page.flush, () => {}, () => page.readOnly,
+    async p => { assetCalls.push(p); return `/${p}` }, store)
+  try {
+    renderProfiles(page.draft!, page.readOnly, false)
+    await turn()
+    assert.deepEqual(assetCalls, [], 'no preset assets loaded while profiles tab is hidden')
+    assert.equal(uid, 0, 'no custom thumbnail ObjectURL allocated while profiles tab is hidden')
+
+    renderProfiles(page.draft!, page.readOnly, true)
+    await turn(); await turn()
+    assert.equal(assetCalls.length, 4, 'loads built-in thumbnails once visible')
+    assert.equal(uid, 1, 'loads custom image thumbnail once visible')
+    const baselineListeners = signalListeners
+
+    // Force repeated re-renders via retryMedia; abort listeners must NOT accumulate on page signal
+    renderProfiles.retryMedia(imgId)
+    await turn(); await turn()
+    renderProfiles.retryMedia(imgId)
+    await turn(); await turn()
+    assert.equal(uid, 3)
+    assert.equal(revoked.length, 2, 'previous thumbnail ObjectURLs revoked on re-render')
+    assert.equal(signalListeners, baselineListeners, 'onRelease cleans up page signal abort listener on re-render')
+  } finally {
+    signal.abort()
+    page.dispose()
+  }
+  assert.equal(revoked.length, 3, 'final thumbnail ObjectURL revoked on dispose')
+})
+
+test('otter composer pet mounts official silhouette, reacts to typing and clicks, and cleans up completely on dispose', () => {
+  class FakeNode extends EventTarget {
+    tag: string
+    className = ''
+    dataset: Record<string, string> = {}
+    attrs = new Map<string, string>()
+    children: FakeNode[] = []
+    parent: FakeNode | null = null
+    hidden = false
+    textContent = ''
+    offsetWidth = 10
+    #classes = new Set<string>()
+    constructor(tag: string) { super(); this.tag = tag }
+    get isConnected(): boolean { return this.tag === 'host' || !!this.parent?.isConnected }
+    classList = {
+      add: (c: string) => { this.#classes.add(c); this.className = [...this.#classes].join(' ') },
+      remove: (c: string) => { this.#classes.delete(c); this.className = [...this.#classes].join(' ') },
+    }
+    setAttribute(k: string, v: string) { this.attrs.set(k, v) }
+    toggleAttribute(k: string, force?: boolean) { if (force === false) this.attrs.delete(k); else this.attrs.set(k, '') }
+    append(...nodes: FakeNode[]) { for (const n of nodes) { n.parent = this; this.children.push(n) } }
+    remove() { if (!this.parent) return; this.parent.children = this.parent.children.filter(c => c !== this); this.parent = null }
+  }
+  const makeNode = (tag: string) => new FakeNode(tag)
+  const hostEl = makeNode('host')
+  const timers = new Map<number, () => void>()
+  let nextTimer = 0
+  const doc = Object.assign(new EventTarget(), {
+    visibilityState: 'visible',
+    defaultView: {
+      setTimeout(fn: () => void) { const id = ++nextTimer; timers.set(id, fn); return id },
+      clearTimeout(id: number) { timers.delete(id) },
+    },
+    querySelector: (sel: string) => sel === '[data-composer-card]' ? hostEl : null,
+    createElement: (tag: string) => makeNode(tag),
+    createElementNS: (_ns: string, tag: string) => makeNode(tag),
+  }) as unknown as Document
+
+  const pet = createOtterPet(doc, '[data-composer-card]', target => {
+    const container = makeNode('div')
+    ;(target as unknown as FakeNode).append(container)
+    return { container: container as unknown as HTMLElement, dispose() { container.remove() } }
+  })
+
+  pet.sync(true)
+  assert.equal(pet.isHealthy(), true)
+  assert.equal(hostEl.children.length, 1)
+  const petBox = hostEl.children[0]
+  assert.equal(petBox.dataset.tbPetMood, 'idle')
+  const svg = petBox.children[1].children[0]
+  const classes = svg.children.map(c => c.attrs.get('class') ?? c.tag)
+  assert.deepEqual(classes, ['tb-otter-laptop', 'tb-otter-tail', 'tb-otter-back-legs', 'tb-otter-torso', 'tb-otter-paw-l', 'tb-otter-paw-r'])
+  assert.equal(svg.children[3].children[2].attrs.get('d'), OTTER_BODY_PATH)
+  assert.equal(svg.children[0].children[5].attrs.get('d'), OTTER_ACCENT_PATH)
+
+  // Typing triggers typing mood, then settles back to idle
+  hostEl.dispatchEvent(new Event('input'))
+  assert.equal(petBox.dataset.tbPetMood, 'typing')
+  for (const fn of [...timers.values()]) fn()
+  timers.clear()
+  assert.equal(petBox.dataset.tbPetMood, 'idle')
+
+  // Click triggers hop + sparkle without propagating
+  petBox.dispatchEvent(new Event('click'))
+  assert.equal(petBox.dataset.tbPetMood, 'hop')
+  assert.equal(petBox.children[2].hidden, false)
+
+  // Priority anchor re-mounts onto a higher dock when present while still listening to composer input
+  const dockRoot = makeNode('host')
+  const dockEl = makeNode('div')
+  dockRoot.append(dockEl)
+  let dockOpen = true
+  const multiDoc = Object.assign(new EventTarget(), {
+    visibilityState: 'visible',
+    defaultView: doc.defaultView,
+    querySelector: (sel: string) => sel === '[data-queue-dock]' ? (dockOpen ? dockEl : null) : sel === '[data-composer-card]' ? hostEl : null,
+    createElement: (tag: string) => makeNode(tag),
+    createElementNS: (_ns: string, tag: string) => makeNode(tag),
+  }) as unknown as Document
+  const smartPet = createOtterPet(multiDoc, ['[data-queue-dock]', '[data-composer-card]'], target => {
+    const container = makeNode('div')
+    ;(target as unknown as FakeNode).append(container)
+    return { container: container as unknown as HTMLElement, dispose() { container.remove() } }
+  }, '[data-composer-card]')
+  smartPet.sync(true)
+  assert.equal(dockEl.children.length, 1)
+  assert.equal(smartPet.hasLostHost(), false)
+  hostEl.dispatchEvent(new Event('input'))
+  assert.equal(dockEl.children[0].dataset.tbPetMood, 'typing')
+  // Removing the queue dock disconnects the pet's current host and triggers hasLostHost() so the observer hops back
+  dockOpen = false
+  dockEl.remove()
+  assert.equal(smartPet.isHealthy(), false)
+  assert.equal(smartPet.hasLostHost(), true)
+  smartPet.sync(true)
+  assert.equal(smartPet.isHealthy(), true)
+  assert.equal(smartPet.hasLostHost(), false)
+  assert.equal(dockEl.children.length, 0)
+  assert.equal(hostEl.children.length, 2)
+  smartPet.dispose()
+
+  // Dispose removes DOM and clears timers
+  pet.dispose()
+  assert.equal(pet.isHealthy(), false)
+  assert.equal(hostEl.children.length, 0)
+  assert.equal(timers.size, 0)
 })
 
 test('notifications supersede old reads and never start writes; disposes during a read', async () => {

@@ -1,13 +1,24 @@
-import { DEFAULT, MAX_ROTATION_ITEMS, VIDEO_MIMES } from '../shared/config.ts'
-import type { ThemeConfig } from '../shared/config.ts'
+import { FONT_PRESETS, MAX_ROTATION_ITEMS, NATIVE_DEFAULT, VIDEO_MIMES } from '../shared/config.ts'
+import type { FontPreset, ThemeConfig } from '../shared/config.ts'
 import { createFontLoader, validateFont } from '../shared/font-loader.ts'
 import type { FontState } from '../shared/font-loader.ts'
 import { IMAGE_MIMES, validateImage, validateVideo, withMime } from '../shared/media-db.ts'
 import type { MediaRecord, MediaStore, MediaSummary } from '../shared/media-db.ts'
+import { FONT_STACKS } from '../shared/palette.ts'
 import { uuid } from '../shared/sync.ts'
 import type { Key } from './i18n.ts'
 import { preserveFocus } from './ui.ts'
 import type { Ui } from './ui.ts'
+
+const FONT_KEYS: Record<FontPreset, Key> = {
+  system: 'fontSystem',
+  modern: 'fontModern',
+  clean: 'fontClean',
+  editorial: 'fontEditorial',
+  literary: 'fontLiterary',
+  calligraphy: 'fontCalligraphy',
+  tech: 'fontTech',
+}
 
 const KINDS = ['image', 'video', 'font'] as const
 type Kind = typeof KINDS[number]
@@ -37,11 +48,40 @@ export function mediaPage(ui: Ui, fontPanel: HTMLElement, bgPanel: HTMLElement, 
   }))
   button(footer, 'retry', () => void refresh())
   const fonts = make('fieldset', fontPanel, 'tb-card')
+  text(make('h3', fonts), 'fontPresets')
+  const presetGrid = make('div', fonts, 'tb-font-presets')
+  const fontPresetButtons = FONT_PRESETS.map(preset => {
+    const btn = make('button', presetGrid, 'tb-font-chip')
+    btn.type = 'button'
+    btn.dataset.tbFontPreset = preset
+    const title = text(make('strong', btn), FONT_KEYS[preset])
+    const sampleMark = make('small', btn)
+    sampleMark.textContent = 'Aa 山川'
+    if (preset !== 'system') {
+      title.style.fontFamily = FONT_STACKS[preset]
+      sampleMark.style.fontFamily = FONT_STACKS[preset]
+    }
+    on(btn, 'click', () => {
+      if (locked()) return
+      const { mediaId, mime } = config().font
+      const next: ThemeConfig['font'] = preset === 'system'
+        ? { enabled: false, mediaId, mime }
+        : { enabled: false, mediaId, mime, preset }
+      edit({ font: next, activeProfile: null })
+      void commit()
+    })
+    return { preset, btn }
+  })
+  text(make('h4', fonts, 'tb-section-sub'), 'fontLocalSection')
   const fontStatus = make('p', fonts, 'tb-hint')
   fontStatus.setAttribute('aria-live', 'polite')
   const enabled = check(fonts, 'fontEnable', enabled => edit({ font: { ...config().font, enabled }, activeProfile: null }))
   const actions = make('div', fonts, 'tb-actions')
-  const unlink = button(actions, 'fontRemove', () => { edit({ font: DEFAULT.font, activeProfile: null }); void commit() })
+  const unlink = button(actions, 'fontRemove', () => {
+    const preset = config().font.preset
+    edit({ font: preset ? { ...NATIVE_DEFAULT.font, preset } : NATIVE_DEFAULT.font, activeProfile: null })
+    void commit()
+  })
   const fontLink = button(actions, 'associate', () => {
     const { mediaId, mime } = config().font
     if (mediaId && mime) choose('font', 'link', { kind: 'font', id: mediaId, mime })
@@ -162,17 +202,25 @@ export function mediaPage(ui: Ui, fontPanel: HTMLElement, bgPanel: HTMLElement, 
     return [...new Map(refs.map(ref => [`${ref.kind}:${ref.id}:${ref.mime ?? ''}`, ref])).values()]
   }
   function drawFont(config: ThemeConfig) {
-    const { mediaId, enabled: useFont } = config.font
+    const { mediaId, enabled: useFont, preset } = config.font
     const row = rows.find(item => item.id === mediaId)
     const absent = fontState === 'missing' || !!mediaId && loaded && !row
     const status = { idle: 'fontIdle', loading: 'fontLoading', ready: 'fontReady', missing: 'missing', error: 'fontError' } as const
-    fontStatus.textContent = [row?.name, ui.t(absent ? 'missing' : status[fontState])].filter(Boolean).join(' · ')
+    const activePreset: FontPreset = useFont ? 'system' : (preset ?? 'system')
+    for (const item of fontPresetButtons) {
+      item.btn.setAttribute('aria-pressed', String(!useFont && item.preset === activePreset))
+    }
+    fontStatus.textContent = !useFont && preset
+      ? `${ui.t(FONT_KEYS[preset])} · ${ui.t('fontPresetReady')}`
+      : [row?.name, ui.t(absent ? 'missing' : status[fontState])].filter(Boolean).join(' · ')
     enabled.checked = useFont
     enabled.disabled = !mediaId || busy
     fontLink.hidden = !absent
     fontLink.disabled = busy
     unlink.disabled = !mediaId || busy
-    sample.style.fontFamily = fontState === 'ready' ? `${family}, system-ui, sans-serif` : ''
+    sample.style.fontFamily = fontState === 'ready'
+      ? `${family}, system-ui, sans-serif`
+      : (!useFont && preset ? FONT_STACKS[preset] : '')
   }
   function rowButton(parent: HTMLElement, ref: Ref, key: Key, run: () => void, disabled = false) {
     const node = button(parent, key, run)

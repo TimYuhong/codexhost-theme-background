@@ -8,6 +8,9 @@ export const SHADERS = ['aurora', 'nebula', 'noise', 'starfield'] as const
 export const PATTERNS = ['dots', 'waves', 'poly', 'rain', 'contour', 'meta'] as const
 export const VIDEO_MIMES = ['video/mp4', 'video/webm'] as const
 export const FONT_MIMES = ['font/woff2', 'font/woff', 'font/ttf', 'font/otf'] as const
+export const FONT_PRESETS = ['system', 'modern', 'clean', 'editorial', 'literary', 'calligraphy', 'tech'] as const
+export const BUILTIN_BACKDROPS = ['default', 'forest', 'minimal', 'glass'] as const
+export const ANIMATED_PRESETS: ReadonlySet<BuiltinBackdrop> = new Set(['default'])
 export const ROTATION_MODES = ['shuffle', 'order'] as const
 export const ROTATION_INTERVALS = ['reload', 'hourly', 'daily', 'weekly'] as const
 export const MAX_ROTATION_ITEMS = 30, MAX_PROFILES = 20, MAX_PROFILE_NAME = 64
@@ -15,10 +18,14 @@ export const MAX_SETTINGS = 1024 * 1024
 
 export type Layout = typeof LAYOUTS[number]
 export type Surface = typeof SURFACES[number]
+export type FontPreset = typeof FONT_PRESETS[number]
+export type BuiltinBackdrop = typeof BUILTIN_BACKDROPS[number]
+export const PRESET_ASSET_PATH = (id: BuiltinBackdrop) => `assets/presets/${id}.webp`
 export type Placement = { mode: Layout; zoom: number; panX: number; panY: number }
 export type Stroke = { width: number; color: typeof STROKE_COLORS[number]; customColor: string }
 export type Source =
   | { kind: 'none' }
+  | { kind: 'preset'; id: BuiltinBackdrop }
   | { kind: 'url'; url: string }
   | { kind: 'local-image'; id: string }
   | { kind: 'local-video'; id: string; mime: typeof VIDEO_MIMES[number] }
@@ -35,7 +42,7 @@ export type Appearance = {
   opacity: number
   blur: number
 }
-export type ThemeFont = { enabled: boolean; mediaId: string | null; mime: typeof FONT_MIMES[number] | null }
+export type ThemeFont = { enabled: boolean; mediaId: string | null; mime: typeof FONT_MIMES[number] | null; preset?: Exclude<FontPreset, 'system'> }
 export type Rotation = {
   poolId: string; mode: typeof ROTATION_MODES[number]; interval: typeof ROTATION_INTERVALS[number]; items: string[]
 }
@@ -59,7 +66,7 @@ function surfaces<T>(make: (surface: Surface) => T): Record<Surface, T> {
 }
 const placement: Placement = { mode: 'fill', zoom: 1, panX: 0.5, panY: 0.5 }
 const V1_OPACITIES = { bg: 75, sidebar: 75, card: 100, input: 100, settings: 75 }
-export const DEFAULT: ThemeConfig = {
+export const NATIVE_DEFAULT: ThemeConfig = {
   schemaVersion: 2, accent: null, schemeOverride: 'auto', respectReducedTransparency: false,
   opacities: { bg: 85, sidebar: 90, card: 85, input: 85, settings: 90 },
   blurs: surfaces(() => 0), strokes: surfaces(() => ({ width: 0, color: 'auto', customColor: '#808080' })),
@@ -68,6 +75,16 @@ export const DEFAULT: ThemeConfig = {
   rotation: { poolId: '1bb75e22-89fb-462b-8dd5-e45da014da9e', mode: 'shuffle', interval: 'reload', items: [] },
   profiles: [], activeProfile: null,
   schedule: { enabled: false, mode: 'time', dayStart: '07:00', nightStart: '19:00', dayProfile: null, nightProfile: null },
+}
+export const DEFAULT: ThemeConfig = {
+  ...NATIVE_DEFAULT,
+  accent: '#00ef07',
+  schemeOverride: 'dark',
+  opacities: { bg: 25, sidebar: 0, card: 50, input: 85, settings: 90 },
+  blurs: { bg: 0, sidebar: 0, card: 0, input: 0, settings: 18 },
+  source: { kind: 'preset', id: 'default' },
+  opacity: 100,
+  font: { enabled: false, mediaId: null, mime: null, preset: 'modern' },
 }
 
 export const record = (value: unknown): value is Record<string, unknown> =>
@@ -96,6 +113,11 @@ export function readSource(raw: unknown): Source {
   const seed = Math.trunc(bounded(raw.seed, 1, 2147483647, 1729))
   const scale = bounded(raw.scale, 0.5, 2, 1)
   switch (raw.kind) {
+    case 'preset': {
+      const legacy = raw.id === 'moonlit' ? 'default' : raw.id
+      const id = BUILTIN_BACKDROPS.find(value => value === legacy)
+      return id ? { kind: 'preset', id } : { kind: 'none' }
+    }
     case 'url': {
       const url = publicImageUrl(raw.url)
       return url ? { kind: 'url', url } : { kind: 'none' }
@@ -129,27 +151,31 @@ export function readAppearance(raw: unknown, legacy = false): Appearance {
   return {
     accent: hex(a.accent), schemeOverride: choice(SCHEMES, a.schemeOverride, 'auto'),
     opacities: surfaces(key => snapOpacity(legacy && key !== 'card' && key !== 'input' ? a.plate : o[key],
-      (legacy ? V1_OPACITIES : DEFAULT.opacities)[key])),
+      (legacy ? V1_OPACITIES : NATIVE_DEFAULT.opacities)[key])),
     blurs: surfaces(key => Math.round(bounded(b[key], 0, 40, 0))),
     strokes: surfaces(key => {
       const stroke = fields(s[key])
       return { width: Math.round(bounded(stroke.width, 0, 4, 0) * 2) / 2,
         color: choice(STROKE_COLORS, stroke.color, 'auto'), customColor: hex(stroke.customColor) ?? '#808080' }
     }),
-    opacity: Math.round(bounded(a.opacity, 0, 100, DEFAULT.opacity)), blur: Math.round(bounded(a.blur, 0, 60, 0)),
+    opacity: Math.round(bounded(a.opacity, 0, 100, NATIVE_DEFAULT.opacity)), blur: Math.round(bounded(a.blur, 0, 60, 0)),
   }
 }
-function readFont(raw: unknown) {
+function readFont(raw: unknown): ThemeFont {
   const font = fields(raw), mediaId = uuid(font.mediaId), mime = FONT_MIMES.find(value => value === font.mime)
-  return mediaId && mime ? { enabled: font.enabled === true, mediaId, mime } : { ...DEFAULT.font }
+  const preset = FONT_PRESETS.find(value => value === font.preset)
+  const base: ThemeFont = mediaId && mime ? { enabled: font.enabled === true, mediaId, mime } : { ...NATIVE_DEFAULT.font }
+  return preset && preset !== 'system' ? { ...base, preset } : base
 }
 function validFont(raw: unknown) {
   if (!record(raw) || typeof raw.enabled !== 'boolean') return false
+  if (raw.preset !== undefined && !FONT_PRESETS.includes(raw.preset as FontPreset)) return false
   if (raw.mediaId == null && raw.mime == null) return !raw.enabled
   return !!readFont(raw).mediaId
 }
 function validSource(raw: unknown, source: Source, poolId: string) {
   if (!record(raw) || raw.kind !== source.kind) return false
+  if (source.kind === 'preset') return raw.id === source.id || (raw.id === 'moonlit' && source.id === 'default')
   if (source.kind === 'rotation') return source.poolId === poolId
   if ('seed' in source) return Object.entries(source).every(([key, value]) => raw[key] === value)
   return true

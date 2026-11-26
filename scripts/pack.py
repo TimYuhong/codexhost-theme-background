@@ -10,8 +10,10 @@ NAMES = sorted((
     'LICENSE', 'manifest.json', 'page.mjs', 'page.css',
     'desktop.js', 'desktop.css', 'web.mjs', 'web.css',
     'icon.png', 'preview-dark.webp', 'preview-settings.webp', 'preview-light.webp',
+    'assets/presets/default.webp', 'assets/presets/forest.webp', 'assets/presets/glass.webp', 'assets/presets/minimal.webp',
 ))
 MIB = 1024 * 1024
+ZIP_BUDGET = 12 * MIB
 
 
 def require(condition, message):
@@ -24,10 +26,20 @@ def digest(path):
         return sha256(handle.read()).hexdigest()
 
 
+def walk_dist(root: Path):
+    found = []
+    for path in root.rglob('*'):
+        if path.is_symlink():
+            raise ValueError(f'dist entry must not be a symlink: {path}')
+        if path.is_file():
+            found.append(path.relative_to(root).as_posix())
+    return sorted(found)
+
+
 def main():
     dist = Path('dist')
     release = Path('release')
-    require(sorted(p.name for p in dist.iterdir()) == NAMES, 'dist must contain the exact 12 release files')
+    require(walk_dist(dist) == NAMES, f'dist must contain the exact {len(NAMES)} release files')
     source = {name: dist / name for name in NAMES}
     require(all(path.is_file() and not path.is_symlink() for path in source.values()), 'dist entries must be regular files')
     manifest = json.loads(source['manifest.json'].read_text(encoding='utf-8'))
@@ -41,6 +53,7 @@ def main():
     for name, path in source.items():
         limit = (
             256 * 1024 if name.endswith('.css') else
+            8 * MIB if name == 'assets/presets/default.webp' else
             512 * 1024 if name.endswith(('.js', '.mjs', '.webp')) else
             128 * 1024
         )
@@ -58,7 +71,7 @@ def main():
                 info = ZipInfo(name, (1980, 1, 1, 0, 0, 0))
                 info.external_attr = 0o100644 << 16
                 package.writestr(info, path.read_bytes(), compress_type=ZIP_DEFLATED)
-        require(archive.stat().st_size <= MIB, 'ZIP exceeds the 1 MiB project limit')
+        require(archive.stat().st_size <= ZIP_BUDGET, f'ZIP exceeds the {ZIP_BUDGET // MIB} MiB project limit')
         with ZipFile(archive) as installed:
             require(installed.namelist() == NAMES, 'ZIP paths or file count differ from dist')
             require(sum(info.file_size for info in installed.infolist()) <= 256 * MIB, 'ZIP exceeds the unpack limit')

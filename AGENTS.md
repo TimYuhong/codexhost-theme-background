@@ -9,7 +9,7 @@
 | 媒体、字体和动效 | 切源使旧代次失效，每个消费者只管理自己的 ObjectURL。IDB 事务完成后才广播。校验大小、格式和解码。补 `backdrop.test.ts`，跑 M04、M05、M09、M10、M12。 |
 | 定时与事件 | Desktop 可见态 5 秒对账，Web 接收 Host 事件。单独 30 秒检查定时和时间档轮换。对账、focus 和 Page 挂载不推进 `reload`。回收观察器、定时器、监听和在途回调，跑 M03、M07、M10。 |
 | 页面 | CSS 全部限定 `[data-tb-page]`，只使用八个页面令牌。弹层归属传入根。普通 DOM 和 Shadow DOM 核验中英文、键盘和焦点，复核异步吸管弹层关闭时归还焦点。 |
-| 入口和交付 | Desktop 同步 `define`，Page/Web 各导出约定入口。构建三份单文件，`dist` 和 ZIP 根固定十二个文件（八核心文件 + 图标与三张预览图）。遵守 `scripts/verify.mjs` 字节、图片签名和语法限制。 |
+| 入口和交付 | Desktop 同步 `define`，Page/Web 各导出约定入口。构建三份单文件，`dist` 和 ZIP 固定十六个文件（八核心文件 + 图标、三张预览图与四张 `assets/presets/*.webp` 内置壁纸）。遵守 `scripts/verify.mjs` 字节、图片签名和语法限制。 |
 
 在 Node 24、pnpm 10.32.1 和 Python 3 环境执行：
 

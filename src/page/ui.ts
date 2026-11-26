@@ -146,7 +146,7 @@ export function pageUi(page: HTMLElement, main: HTMLElement, signal: AbortSignal
         main.inert = true
         panel.addEventListener('keydown', event => {
           if (event.key !== 'Tab') return
-          const items = [...panel.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]')]
+          const items = [...panel.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]')]
           const index = items.indexOf(focused.activeElement as HTMLElement)
           event.preventDefault()
           const offset = event.shiftKey ? -1 : 1

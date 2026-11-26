@@ -1,4 +1,4 @@
-import { clamp } from '../shared/config.ts'
+import { ANIMATED_PRESETS, clamp, PRESET_ASSET_PATH } from '../shared/config.ts'
 import type { Placement, ThemeConfig } from '../shared/config.ts'
 import { pixelsDark } from '../shared/palette.ts'
 import { loadVideoFrame, prepareVideo, releaseVideo } from '../shared/video.ts'
@@ -73,7 +73,7 @@ function drawImage(ctx: CanvasRenderingContext2D, image: HTMLImageElement | HTML
 
 export function createBackdrop(container: HTMLElement, signal: AbortSignal,
   loadBlob: (id: string, kind: 'image' | 'video', mime?: string) => Promise<Blob | undefined>, onState: (state: RenderState) => void,
-  { cors = false, baseColor }: { cors?: boolean; baseColor?: () => string } = {}): Backdrop {
+  { cors = false, baseColor, loadAsset }: { cors?: boolean; baseColor?: () => string; loadAsset?: (path: string) => Promise<string | undefined> } = {}): Backdrop {
   const doc = container.ownerDocument, win = doc.defaultView!
   const motion = win.matchMedia('(prefers-reduced-motion: reduce)')
   let active = !signal.aborted, visible = true, paused = false, generation = 0, key: string | undefined, config: ThemeConfig | undefined
@@ -85,7 +85,9 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
   let videoReady = false, wantsPlayback = false, videoLoad: AbortController | undefined
   let node: HTMLElement | undefined, paint: (() => void) | undefined, dropGraphics: (() => void) | undefined
   let reported: RenderState | undefined, fallback: 'mesh' | 'gradient' | undefined
-  let sampled = false, frameDark: boolean | null = null
+  let sampled = false, frameDark: boolean | null = null, lastStyleSig = ''
+  const samePlacement = (a: Placement | undefined, b: Placement) =>
+    !!a && a.mode === b.mode && a.zoom === b.zoom && a.panX === b.panX && a.panY === b.panY
   const alive = (id: number) => active && !signal.aborted && container.isConnected && id === generation
   function report(state: RenderState) {
     if (!active || JSON.stringify(reported) === JSON.stringify(state)) return
@@ -115,6 +117,7 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
     }
     node?.remove()
     node = undefined
+    lastStyleSig = ''
     needsDraw = true
     animated = false
   }
@@ -137,9 +140,14 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
   }
   function styleNode() {
     if (!node || !config) return
-    if (baseColor) container.style.backgroundColor = baseColor()
+    const bg = baseColor ? baseColor() : ''
+    const isVideoNode = node === video
+    const sig = `${bg}|${config.opacity}|${isVideoNode ? 'v' : `${config.blur}|${width}|${height}`}`
+    if (sig === lastStyleSig) return
+    lastStyleSig = sig
+    if (baseColor) container.style.backgroundColor = bg
     node.style.opacity = String(config.opacity / 100)
-    if (node === video) return
+    if (isVideoNode) return
     const pad = config.blur * 3
     node.style.inset = `${-pad}px`
     node.style.width = `${width + 2 * pad}px`
@@ -225,10 +233,18 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
     }
   }
   const videoComposite = (next: ThemeConfig) => !!next.blur || next.videoPlacement.mode === 'tile'
-  async function load(id: number, source: Extract<ThemeConfig['source'], { kind: 'url' | 'local-image' | 'local-video' }>) {
+  async function load(id: number, source: Extract<ThemeConfig['source'], { kind: 'preset' | 'url' | 'local-image' | 'local-video' }>) {
     let src: string
     const isVideo = source.kind === 'local-video'
-    if (source.kind !== 'url') {
+    if (source.kind === 'preset') {
+      try {
+        const resolved = await loadAsset?.(PRESET_ASSET_PATH(source.id))
+        if (!alive(id)) return
+        if (!resolved) { unavailable('image'); return }
+        animatedImage = ANIMATED_PRESETS.has(source.id)
+        src = resolved
+      } catch { if (alive(id)) unavailable('image'); return }
+    } else if (source.kind !== 'url') {
       try {
         const blob = await loadBlob(source.id, isVideo ? 'video' : 'image', isVideo ? source.mime : undefined)
         if (!alive(id)) return
@@ -461,8 +477,8 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
   }
   function update(next: ThemeConfig) {
     if (!active || !container.isConnected) { refresh(); return }
-    if (config?.blur !== next.blur || JSON.stringify(config.placement) !== JSON.stringify(next.placement) ||
-      JSON.stringify(config.videoPlacement) !== JSON.stringify(next.videoPlacement)) needsDraw = true
+    if (config?.blur !== next.blur || !samePlacement(config?.placement, next.placement) ||
+      !samePlacement(config?.videoPlacement, next.videoPlacement)) needsDraw = true
     if (video && config && videoComposite(config) !== videoComposite(next)) releaseGraphics()
     config = next
     const source = next.source, nextKey = JSON.stringify(source)
@@ -472,7 +488,7 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
       if (source.kind === 'none' || source.kind === 'rotation') report({ state: 'idle' })
       else {
         report({ state: 'loading' })
-        if (source.kind === 'local-image' || source.kind === 'url' || source.kind === 'local-video') void load(generation, source)
+        if (source.kind === 'preset' || source.kind === 'local-image' || source.kind === 'url' || source.kind === 'local-video') void load(generation, source)
       }
     }
     refresh()
