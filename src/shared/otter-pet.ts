@@ -251,7 +251,11 @@ export function createOtterPet(
       unmount()
       return
     }
-    const listenerTarget = (inputSelector ? (target.matches?.(inputSelector) ? target : doc.querySelector<HTMLElement>(inputSelector)) : null) ?? target
+    const listenerTarget = (inputSelector
+      ? (target.matches?.(inputSelector)
+        ? target
+        : target.closest?.<HTMLElement>(inputSelector) ?? doc.querySelector<HTMLElement>(inputSelector))
+      : null) ?? target
     if (host === target && eventTarget === listenerTarget && host.isConnected && mounted?.container.isConnected) {
       mounted.container.toggleAttribute('data-tb-pet-hidden', doc.visibilityState === 'hidden')
       return

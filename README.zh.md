@@ -9,7 +9,7 @@
 
 ## 界面预览
 
-| 深色主界面（月夜樱桥） | 方案管理工坊（`v1.1.3`） | 浅色通透对话（冰湖琉璃） |
+| 深色主界面（月夜樱桥） | 方案管理工坊（`v1.1.4`） | 浅色通透对话（冰湖琉璃） |
 | :---: | :---: | :---: |
 | ![深色主界面预览](assets/preview-dark.webp) | ![方案管理页预览](assets/preview-settings.webp) | ![浅色对话界面预览](assets/preview-light.webp) |
 
@@ -54,7 +54,7 @@
 3. 打开「主题背景」管理页即可切换内置方案或创建自己的自定义方案。
 
 ### 导入本地 `.zip` 包
-1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.1.3.zip`。
+1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.1.4.zip`。
 2. 在插件中心选择「导入插件 → 本地 .zip」并选择下载的压缩包。
 3. 启用扩展即可使用，关闭管理页后样式持续生效。
 

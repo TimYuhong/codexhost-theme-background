@@ -13,7 +13,19 @@ import settingsCss from './settings-shadow.css'
 declare const define: (extension: { activate(api: DesktopApi): Dispose }) => void
 const ANCHOR = '[data-app-shell-frame], [data-app-shell-main-surface], [data-codexhost-settings-shell]'
 const SETTINGS_SHELL = '[data-codexhost-settings-shell]'
-const DESKTOP_COMPOSER = '[data-composer-surface-variant]'
+const DESKTOP_COMPOSER_ROOT = '[data-codex-composer-root]'
+const DESKTOP_RAIL_ACTIVE = '[data-composer-rail][data-composer-rail-placement="above"]:has([data-composer-rail-item="present"]:not([aria-hidden="true"]))'
+const DESKTOP_SURFACE = '[data-composer-surface-variant]:not([data-composer-surface-variant="document"])'
+const DESKTOP_COMPOSERS = [
+  `[data-app-shell-active-page="true"] ${DESKTOP_COMPOSER_ROOT} ${DESKTOP_RAIL_ACTIVE}`,
+  `[data-app-shell-active-page="true"] ${DESKTOP_COMPOSER_ROOT} ${DESKTOP_SURFACE}`,
+  `${DESKTOP_COMPOSER_ROOT} ${DESKTOP_RAIL_ACTIVE}`,
+  `${DESKTOP_COMPOSER_ROOT} ${DESKTOP_SURFACE}`,
+  DESKTOP_RAIL_ACTIVE,
+  DESKTOP_SURFACE,
+] as const
+const DESKTOP_PET_WATCH = '[data-composer-rail], [data-composer-rail-item], [data-composer-surface-variant]'
+const DESKTOP_PET_SCOPE = `${DESKTOP_COMPOSER_ROOT}, [data-composer-rail]`
 const SKIP_SCAN_TAGS = new Set(['SPAN', 'CODE', 'PRE', 'P', 'LI', 'A', 'STRONG', 'EM', 'SVG', 'PATH', 'BR', 'TR', 'TD', 'TH', 'G', 'CIRCLE', 'RECT', 'LINE'])
 
 function activate(api: DesktopApi): Dispose {
@@ -23,11 +35,11 @@ function activate(api: DesktopApi): Dispose {
   const forced = win.matchMedia('(forced-colors: active)')
   const reduced = win.matchMedia('(prefers-reduced-transparency: reduce)')
   const marks = new Set<string>(), media = createMediaStore()
-  const pet = createOtterPet(doc, DESKTOP_COMPOSER, host => {
+  const pet = createOtterPet(doc, DESKTOP_COMPOSERS, host => {
     const container = doc.createElement('div')
     api.dom.mount(container, host, 'append')
     return { container, dispose() { container.remove() } }
-  })
+  }, DESKTOP_COMPOSER_ROOT)
   let cachedAsset: { path: string; promise: Promise<string | undefined> } | undefined
   const loadAsset = (path: string) => {
     if (cachedAsset?.path === path) return cachedAsset.promise
@@ -119,18 +131,19 @@ function activate(api: DesktopApi): Dispose {
           needsRefresh = true; break
         }
       }
-    } else if (!settingsShellEl || needPet) {
-      const watchSel = !settingsShellEl && needPet ? `${SETTINGS_SHELL}, ${DESKTOP_COMPOSER}` : !settingsShellEl ? SETTINGS_SHELL : DESKTOP_COMPOSER
+    } else {
+      const watchSel = !settingsShellEl && needPet ? `${SETTINGS_SHELL}, ${DESKTOP_PET_WATCH}` : !settingsShellEl ? SETTINGS_SHELL : needPet ? DESKTOP_PET_WATCH : ''
       for (const item of records) {
         if (item.type === 'attributes') { needsRefresh = true; break }
         if (layer?.contains(item.target)) continue
-        if (hasRelevantNode(item.addedNodes, watchSel)) {
+        if (watchSel && hasRelevantNode(item.addedNodes, watchSel)) {
           needsRefresh = true; break
         }
-      }
-    } else {
-      for (const item of records) {
-        if (item.type === 'attributes') { needsRefresh = true; break }
+        if (!forced.matches && item.target.nodeType === 1 && (item.target as Element).closest(DESKTOP_PET_SCOPE)) {
+          if (hasRelevantNode(item.addedNodes, DESKTOP_PET_WATCH) || hasRelevantNode(item.removedNodes, DESKTOP_PET_WATCH)) {
+            needsRefresh = true; break
+          }
+        }
       }
     }
     if (!needsRefresh || queued) return
@@ -182,7 +195,7 @@ function activate(api: DesktopApi): Dispose {
   }
   api.signal.addEventListener('abort', dispose, { once: true })
   observer.observe(root, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] })
-  observer.observe(doc, { childList: true, subtree: true })
+  observer.observe(doc, { childList: true, subtree: true, attributes: true, attributeFilter: ['data-app-shell-active-page', 'data-composer-rail-item'] })
   for (const query of [dark, forced, reduced]) query.addEventListener('change', refresh)
   refresh()
   void reader.read()

@@ -531,6 +531,54 @@ test('otter composer pet mounts official silhouette, reacts to typing and clicks
   assert.equal(hostEl.children.length, 2)
   smartPet.dispose()
 
+  // Desktop active-page & above-composer rail migration binds typing to the matching composer root via closest()
+  const rootA = makeNode('host'), rootB = makeNode('host')
+  const pageAComposer = makeNode('div'), pageBComposer = makeNode('div'), pageBRail = makeNode('div')
+  rootA.append(pageAComposer)
+  rootB.append(pageBRail, pageBComposer)
+  for (const node of [pageAComposer, pageBComposer, pageBRail]) {
+    Object.assign(node, { closest: (sel: string) => sel === '[data-codex-composer-root]' ? node.parent : null })
+  }
+  let activePage: 'a' | 'b' = 'a', railPresent = false
+  const desktopDoc = Object.assign(new EventTarget(), {
+    visibilityState: 'visible',
+    defaultView: doc.defaultView,
+    querySelector: (sel: string) => {
+      if (sel.includes('data-composer-rail')) return activePage === 'b' && railPresent ? pageBRail : null
+      return sel.includes('active-page') ? (activePage === 'a' ? pageAComposer : pageBComposer) : pageAComposer
+    },
+    createElement: (tag: string) => makeNode(tag),
+    createElementNS: (_ns: string, tag: string) => makeNode(tag),
+  }) as unknown as Document
+  const desktopPet = createOtterPet(desktopDoc, [
+    '[data-app-shell-active-page="true"] [data-codex-composer-root] [data-composer-rail][data-composer-rail-placement="above"]:has([data-composer-rail-item="present"]:not([aria-hidden="true"]))',
+    '[data-app-shell-active-page="true"] [data-codex-composer-root] [data-composer-surface-variant]',
+    '[data-composer-surface-variant]',
+  ], target => {
+    const container = makeNode('div')
+    ;(target as unknown as FakeNode).append(container)
+    return { container: container as unknown as HTMLElement, dispose() { container.remove() } }
+  }, '[data-codex-composer-root]')
+  desktopPet.sync(true)
+  assert.equal(pageAComposer.children.length, 1)
+  activePage = 'b'
+  desktopPet.sync(true)
+  assert.equal(pageAComposer.children.length, 0)
+  assert.equal(pageBComposer.children.length, 1)
+  // Queued follow-up rail appears above composer -> pet rides onto the rail while still reacting to composer input
+  railPresent = true
+  desktopPet.sync(true)
+  assert.equal(pageBComposer.children.length, 0)
+  assert.equal(pageBRail.children.length, 1)
+  rootB.dispatchEvent(new Event('input'))
+  assert.equal(pageBRail.children[0].dataset.tbPetMood, 'typing')
+  // Queued follow-up clears -> pet hops cleanly back onto the composer surface
+  railPresent = false
+  desktopPet.sync(true)
+  assert.equal(pageBRail.children.length, 0)
+  assert.equal(pageBComposer.children.length, 1)
+  desktopPet.dispose()
+
   // Dispose removes DOM and clears timers
   pet.dispose()
   assert.equal(pet.isHealthy(), false)
