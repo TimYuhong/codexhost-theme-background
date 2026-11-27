@@ -9,7 +9,7 @@
 
 ## 界面预览
 
-| 深色主界面（月夜樱桥） | 方案管理工坊（`v1.1.2`） | 浅色通透对话（冰湖琉璃） |
+| 深色主界面（月夜樱桥） | 方案管理工坊（`v1.1.3`） | 浅色通透对话（冰湖琉璃） |
 | :---: | :---: | :---: |
 | ![深色主界面预览](assets/preview-dark.webp) | ![方案管理页预览](assets/preview-settings.webp) | ![浅色对话界面预览](assets/preview-light.webp) |
 
@@ -54,18 +54,18 @@
 3. 打开「主题背景」管理页即可切换内置方案或创建自己的自定义方案。
 
 ### 导入本地 `.zip` 包
-1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.1.2.zip`。
+1. 前往 [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest) 下载 `theme-background-1.1.3.zip`。
 2. 在插件中心选择「导入插件 → 本地 .zip」并选择下载的压缩包。
 3. 启用扩展即可使用，关闭管理页后样式持续生效。
 
 ---
 
-## 数据同步与隐私
+## 数据存储、迁移与隐私
 
-| 数据类型 | 存储位置 | 跨端表现 |
+| 数据类型 | 存储位置 | 同步与迁移方式 |
 | --- | --- | --- |
-| 主题色、五区参数、昼夜定时、自定义档案、HTTPS 图片地址、媒体 UUID 引用 | CodexHost Host 扩展存储 | Codex Desktop 与 CH Web 自动同步 |
-| 本地图片、视频、字体文件与轮换状态 | 本端浏览器 / WebView2 / Electron `IndexedDB` | 仅留存在本端，不上传服务器；跨端可用「在此端关联文件」绑定本地副本并复用同一 UUID |
+| 主题色、五区参数、内置方案、昼夜定时、自定义方案、HTTPS 图片地址、媒体 UUID 引用 | 当前宿主的扩展存储（Desktop 与 CH Web 各自独立目录） | 同一 CH Web 服务下的多浏览器/多标签自动同步；**Codex Desktop 与 CH Web 之间配置相互独立**，可在「主题方案 → 配置导入与导出」中通过 JSON 一键复制迁移 |
+| 本地图片、视频、字体文件与轮换状态 | 当前浏览器 / WebView2 / Electron `IndexedDB` | 仅留存在本端，不上传服务器；导入 JSON 到另一端后，可用「在此端关联文件」绑定本地副本并复用同一 UUID |
 
 ---
 

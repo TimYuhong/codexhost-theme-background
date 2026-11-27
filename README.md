@@ -9,7 +9,7 @@
 
 ## Preview
 
-| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.2`) | Light Glass Workspace (Glacial Glass) |
+| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.3`) | Light Glass Workspace (Glacial Glass) |
 | :---: | :---: | :---: |
 | ![Dark workspace preview](assets/preview-dark.webp) | ![Theme studio preview](assets/preview-settings.webp) | ![Light glass interface preview](assets/preview-light.webp) |
 
@@ -54,18 +54,18 @@ Four ready-to-use static HD bundles ship offline with crisp wallpapers (zero fra
 3. Open the **Theme Background** tab to pick a built-in suite or create your own custom theme.
 
 ### Local `.zip` Import
-1. Download `theme-background-1.1.2.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
+1. Download `theme-background-1.1.3.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
 2. In CodexHost, choose **Import Plugin → Local .zip** and select the downloaded archive.
 3. Enable **Theme Background** — your theme stays active even after closing the settings page.
 
 ---
 
-## Sync & Privacy
+## Storage, Migration & Privacy
 
-| Data | Storage Location | Cross-Device Behavior |
+| Data | Storage Location | Sync & Migration Behavior |
 | --- | --- | --- |
-| Colors, surface opacity/blur/outlines, schedules, custom theme profiles, HTTPS URLs, media UUIDs | CodexHost Host extension storage | Synced automatically across Codex Desktop & CH Web |
-| Local images, videos, fonts, rotation state | Local browser / WebView2 / Electron `IndexedDB` | Stored strictly on-device; use **Link file on this device** to bind a local copy to the same shared UUID |
+| Colors, surface settings, built-in/custom themes, schedules, HTTPS URLs, media UUIDs | Active Host extension storage (separate directories for Desktop vs. CH Web) | Browsers/tabs connected to the same CH Web server sync automatically; **Codex Desktop and CH Web keep separate Host storage** — mirror your setup anytime via **Profiles → Configuration Import/Export (JSON)** |
+| Local images, videos, fonts, rotation state | Local browser / WebView2 / Electron `IndexedDB` | Stored strictly on-device with no upload; after importing JSON on another client, use **Link file on this device** to bind a local copy to the same UUID |
 
 ---
 
