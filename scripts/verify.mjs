@@ -8,7 +8,7 @@ import vm from 'node:vm'
 import ts from 'typescript'
 
 const KIB = 1024, MIB = KIB * KIB, JS_BUDGET = 512 * KIB
-const ICON_LIMIT = 128 * KIB, SHOT_LIMIT = 512 * KIB, PRESET_LIMIT = 512 * KIB, ANIMATED_PRESET_LIMIT = 8 * MIB
+const ICON_LIMIT = 128 * KIB, SHOT_LIMIT = 512 * KIB, PRESET_LIMIT = 512 * KIB
 const rootFiles = [
   'LICENSE', 'desktop.css', 'desktop.js', 'icon.png', 'manifest.json',
   'page.css', 'page.mjs', 'preview-dark.webp', 'preview-light.webp', 'preview-settings.webp',
@@ -92,7 +92,6 @@ async function verify(dir, print = false) {
     assert.ok(stat.isFile(), `${name}: expected a regular file`)
     const js = /\.(?:m?js)$/.test(name)
     const host = name === 'manifest.json' ? 128 * KIB : name === 'icon.png' ? ICON_LIMIT
-      : name === 'assets/presets/default.webp' ? ANIMATED_PRESET_LIMIT
       : name.startsWith('assets/presets/') ? PRESET_LIMIT : name.endsWith('.webp') ? SHOT_LIMIT
       : js ? 2 * MIB : name.endsWith('.css') ? 256 * KIB : 16 * MIB
     assert.ok(stat.size > 0 && stat.size <= host, `${name}: ${stat.size} bytes outside Host limit ${host}`)

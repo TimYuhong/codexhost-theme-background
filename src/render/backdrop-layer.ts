@@ -1,4 +1,4 @@
-import { ANIMATED_PRESETS, clamp, PRESET_ASSET_PATH } from '../shared/config.ts'
+import { clamp, PRESET_ASSET_PATH } from '../shared/config.ts'
 import type { Placement, ThemeConfig } from '../shared/config.ts'
 import { pixelsDark } from '../shared/palette.ts'
 import { loadVideoFrame, prepareVideo, releaseVideo } from '../shared/video.ts'
@@ -241,7 +241,7 @@ export function createBackdrop(container: HTMLElement, signal: AbortSignal,
         const resolved = await loadAsset?.(PRESET_ASSET_PATH(source.id))
         if (!alive(id)) return
         if (!resolved) { unavailable('image'); return }
-        animatedImage = ANIMATED_PRESETS.has(source.id)
+        animatedImage = false
         src = resolved
       } catch { if (alive(id)) unavailable('image'); return }
     } else if (source.kind !== 'url') {

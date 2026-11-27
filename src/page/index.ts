@@ -1,5 +1,5 @@
 import type { Dispose, PageApi } from '../host-api.ts'
-import { ANIMATED_PRESETS, DEFAULT, NATIVE_DEFAULT, PRESET_ASSET_PATH, scheduledConfig, STROKE_COLORS, SURFACES } from '../shared/config.ts'
+import { DEFAULT, NATIVE_DEFAULT, scheduledConfig, STROKE_COLORS, SURFACES } from '../shared/config.ts'
 import type { ThemeConfig } from '../shared/config.ts'
 import { createMediaStore } from '../shared/media-db.ts'
 import { editSettings, openNotices, watchFocus } from '../shared/sync.ts'
@@ -117,47 +117,6 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     }
     return cached
   }
-  const animatedPaths = new Set([...ANIMATED_PRESETS].map(id => PRESET_ASSET_PATH(id)))
-  const posterUrls = new Map<string, Promise<string | undefined>>()
-  const createdPosterUrls: string[] = []
-  const thumbAssetUrl = (path: string) => {
-    if (!animatedPaths.has(path)) return assetUrl(path)
-    let cached = posterUrls.get(path)
-    if (!cached) {
-      cached = (async () => {
-        const src = await assetUrl(path)
-        if (!src || signal.aborted) return undefined
-        const img = doc.createElement('img')
-        img.decoding = 'async'
-        const detach = () => img.removeAttribute('src')
-        signal.addEventListener('abort', detach, { once: true })
-        try {
-          img.src = src
-          await img.decode()
-          if (signal.aborted || !img.naturalWidth || !img.naturalHeight) return undefined
-          const canvas = doc.createElement('canvas')
-          const scale = Math.min(1, 420 / Math.max(img.naturalWidth, img.naturalHeight))
-          canvas.width = Math.max(1, Math.round(img.naturalWidth * scale))
-          canvas.height = Math.max(1, Math.round(img.naturalHeight * scale))
-          const ctx = canvas.getContext('2d')
-          if (!ctx || typeof canvas.toBlob !== 'function') return src
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/webp', 0.84))
-          if (!blob || signal.aborted) return signal.aborted ? undefined : src
-          const poster = URL.createObjectURL(blob)
-          createdPosterUrls.push(poster)
-          return poster
-        } catch {
-          return signal.aborted ? undefined : src
-        } finally {
-          signal.removeEventListener('abort', detach)
-          detach()
-        }
-      })()
-      posterUrls.set(path, cached)
-    }
-    return cached
-  }
   const media = createMediaStore()
   const notifyMedia = (id: string, op: 'put' | 'delete') => {
     notices.send({ type: 'media-changed', id, op })
@@ -171,10 +130,10 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
   }, render, toast)
   const background = backgroundPage(ui, panels.background, signal, media, library, current, edit, commit, locked,
     poolId => notices.send({ type: 'rotation-changed', poolId }), toast,
-    () => scheduledConfig(editor.confirmed ?? current(), systemScheme()).config, assetUrl, thumbAssetUrl)
+    () => scheduledConfig(editor.confirmed ?? current(), systemScheme()).config, assetUrl)
   const colors = colorsPage(ui, panels.colors, patch => edit({ ...patch, activeProfile: null }), locked, commit, background.capture, toast)
   const surfaces = interfacePage(ui, panels.interface, signal, current, edit, commit, locked, toast)
-  const profiles = profilesPage(ui, panels.profiles, signal, current, edit, editor.flush, toast, locked, assetUrl, media, notifyMedia, thumbAssetUrl)
+  const profiles = profilesPage(ui, panels.profiles, signal, current, edit, editor.flush, toast, locked, assetUrl, media, notifyMedia)
   function switchTab(next: Tab) {
     if (tab === next) return
     commit(); tab = next
@@ -223,8 +182,7 @@ export function mount(root: HTMLElement, api: PageApi): Dispose {
     lifetime.abort()
     api.signal.removeEventListener('abort', dispose)
     responsive.disconnect()
-    editor.dispose(); notices.close(); media.close(); assetUrls.clear(); posterUrls.clear()
-    for (const url of createdPosterUrls.splice(0)) URL.revokeObjectURL(url)
+    editor.dispose(); notices.close(); media.close(); assetUrls.clear()
     offLocale(); offScheme(); offFocus()
     win.clearTimeout(toastTimer); win.clearInterval(scheduleTimer)
     page.remove()

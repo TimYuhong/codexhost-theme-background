@@ -10,7 +10,6 @@ export const VIDEO_MIMES = ['video/mp4', 'video/webm'] as const
 export const FONT_MIMES = ['font/woff2', 'font/woff', 'font/ttf', 'font/otf'] as const
 export const FONT_PRESETS = ['system', 'modern', 'clean', 'editorial', 'literary', 'calligraphy', 'tech'] as const
 export const BUILTIN_BACKDROPS = ['default', 'forest', 'minimal', 'glass'] as const
-export const ANIMATED_PRESETS: ReadonlySet<BuiltinBackdrop> = new Set(['default'])
 export const ROTATION_MODES = ['shuffle', 'order'] as const
 export const ROTATION_INTERVALS = ['reload', 'hourly', 'daily', 'weekly'] as const
 export const MAX_ROTATION_ITEMS = 30, MAX_PROFILES = 20, MAX_PROFILE_NAME = 64
@@ -76,16 +75,7 @@ export const NATIVE_DEFAULT: ThemeConfig = {
   profiles: [], activeProfile: null,
   schedule: { enabled: false, mode: 'time', dayStart: '07:00', nightStart: '19:00', dayProfile: null, nightProfile: null },
 }
-export const DEFAULT: ThemeConfig = {
-  ...NATIVE_DEFAULT,
-  accent: '#00ef07',
-  schemeOverride: 'dark',
-  opacities: { bg: 25, sidebar: 0, card: 50, input: 85, settings: 90 },
-  blurs: { bg: 0, sidebar: 0, card: 0, input: 0, settings: 18 },
-  source: { kind: 'preset', id: 'default' },
-  opacity: 100,
-  font: { enabled: false, mediaId: null, mime: null, preset: 'modern' },
-}
+export const DEFAULT: ThemeConfig = NATIVE_DEFAULT
 
 export const record = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value)

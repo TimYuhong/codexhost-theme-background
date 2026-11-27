@@ -9,7 +9,7 @@
 
 ## Preview
 
-| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.1`) | Light Glass Workspace (Glacial Glass) |
+| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.2`) | Light Glass Workspace (Glacial Glass) |
 | :---: | :---: | :---: |
 | ![Dark workspace preview](assets/preview-dark.webp) | ![Theme studio preview](assets/preview-settings.webp) | ![Light glass interface preview](assets/preview-light.webp) |
 
@@ -17,12 +17,12 @@
 
 ## Built-in Theme Suites
 
-Four ready-to-use bundles ship offline with 1080p HD wallpapers, hue-separated WCAG AA accents, CJK/Latin typography presets, low-opacity canvas & sidebar, and crisp zero-blur cards and composer. **Default · Moonlit Sakurabridge** activates automatically on first install, and you can restore the native Host look anytime with one click:
+Four ready-to-use static HD bundles ship offline with crisp wallpapers (zero frame drops), hue-separated WCAG AA accents, CJK/Latin typography presets, low-opacity canvas & sidebar, and crisp zero-blur cards and composer. Enabling the extension keeps the native Host look untouched — pick any suite below at your own pace, craft your own in the Custom Theme Studio, or restore the native Host look anytime with one click:
 
-| Default · Moonlit Sakurabridge (Animated) | Rainy Forest | Nordic Minimal | Glacial Glass |
+| Default · Moonlit Sakurabridge | Rainy Forest | Nordic Minimal | Glacial Glass |
 | :---: | :---: | :---: | :---: |
 | ![Default · Moonlit Sakurabridge](assets/presets/default.webp) | ![Rainy Forest](assets/presets/forest.webp) | ![Nordic Minimal](assets/presets/minimal.webp) | ![Glacial Glass](assets/presets/glass.webp) |
-| Dark · Animated WebP · `#00ef07` · Modern Sans | Dark · `#e5a952` · Modern Sans | Light · `#a85d26` · Editorial Serif | Light · `#9e4260` · Airy Clean |
+| Dark · `#00ef07` · Modern Sans | Dark · `#e5a952` · Modern Sans | Light · `#a85d26` · Editorial Serif | Light · `#9e4260` · Airy Clean |
 
 ---
 
@@ -54,7 +54,7 @@ Four ready-to-use bundles ship offline with 1080p HD wallpapers, hue-separated W
 3. Open the **Theme Background** tab to pick a built-in suite or create your own custom theme.
 
 ### Local `.zip` Import
-1. Download `theme-background-1.1.1.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
+1. Download `theme-background-1.1.2.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
 2. In CodexHost, choose **Import Plugin → Local .zip** and select the downloaded archive.
 3. Enable **Theme Background** — your theme stays active even after closing the settings page.
 

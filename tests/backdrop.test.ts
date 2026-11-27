@@ -394,13 +394,11 @@ test('built-in preset wallpapers resolve via loadAsset, ignore stale generations
   layer.update({ ...DEFAULT, source: { kind: 'preset', id: 'forest' } })
   await flush()
   assert.deepEqual(b.states.at(-1), { state: 'unavailable', reason: 'image' })
-  // Default animated WebP preset mounts as a live native image and freezes on pause / reduced motion
+  // Default static HD WebP preset renders once onto raster canvas with zero ongoing animation
   const live = b.start(undefined, true, path => Promise.resolve(path === 'assets/presets/default.webp' ? 'data:image/webp;base64,UklGRg==' : undefined))
   live.update({ ...DEFAULT, source: { kind: 'preset', id: 'default' } })
   await flush()
-  assert.deepEqual(b.states.at(-1), { state: 'ready', frameDark: true, animatedImage: true })
-  live.pause()
-  assert.equal(b.images.at(-1)?.parent, undefined)
+  assert.deepEqual(b.states.at(-1), { state: 'ready', frameDark: true })
   live.dispose()
   layer.dispose()
 })

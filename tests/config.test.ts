@@ -15,9 +15,9 @@ const uuid = (n: number) => `039d48ec-5920-4c84-ba7d-${String(n).padStart(12, '0
 test('fresh defaults are independent, v1 reads migrate, and future versions remain read-only', () => {
   const first = read(undefined), second = read(undefined)
   assert.deepEqual(first, DEFAULT)
-  assert.deepEqual(first.source, { kind: 'preset', id: 'default' })
-  assert.equal(first.accent, '#00ef07')
-  assert.equal(first.schemeOverride, 'dark')
+  assert.deepEqual(first.source, { kind: 'none' })
+  assert.equal(first.accent, null)
+  assert.equal(first.schemeOverride, 'auto')
   first.placement.zoom = 2
   first.strokes.bg.width = 2
   first.rotation.items.push(uuid(0))

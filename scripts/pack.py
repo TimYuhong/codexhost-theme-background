@@ -13,7 +13,7 @@ NAMES = sorted((
     'assets/presets/default.webp', 'assets/presets/forest.webp', 'assets/presets/glass.webp', 'assets/presets/minimal.webp',
 ))
 MIB = 1024 * 1024
-ZIP_BUDGET = 12 * MIB
+ZIP_BUDGET = 4 * MIB
 
 
 def require(condition, message):
@@ -53,7 +53,6 @@ def main():
     for name, path in source.items():
         limit = (
             256 * 1024 if name.endswith('.css') else
-            8 * MIB if name == 'assets/presets/default.webp' else
             512 * 1024 if name.endswith(('.js', '.mjs', '.webp')) else
             128 * 1024
         )
