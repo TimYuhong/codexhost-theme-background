@@ -9,7 +9,7 @@
 
 ## Preview
 
-| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.0`) | Light Glass Workspace (Glacial Glass) |
+| Dark Workspace (Moonlit Sakurabridge) | Theme Studio (`v1.1.1`) | Light Glass Workspace (Glacial Glass) |
 | :---: | :---: | :---: |
 | ![Dark workspace preview](assets/preview-dark.webp) | ![Theme studio preview](assets/preview-settings.webp) | ![Light glass interface preview](assets/preview-light.webp) |
 
@@ -54,7 +54,7 @@ Four ready-to-use bundles ship offline with 1080p HD wallpapers, hue-separated W
 3. Open the **Theme Background** tab to pick a built-in suite or create your own custom theme.
 
 ### Local `.zip` Import
-1. Download `theme-background-1.1.0.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
+1. Download `theme-background-1.1.1.zip` from [GitHub Releases](https://github.com/TimYuhong/codexhost-theme-background/releases/latest).
 2. In CodexHost, choose **Import Plugin → Local .zip** and select the downloaded archive.
 3. Enable **Theme Background** — your theme stays active even after closing the settings page.
 
